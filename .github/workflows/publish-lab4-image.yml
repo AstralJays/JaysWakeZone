@@ -1,0 +1,51 @@
+name: Publish Lab 4 Flask image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "lab4-serverless/Dockerfile"
+      - "lab4-serverless/app.py"
+      - ".github/workflows/publish-lab4-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: lab4-serverless
+          push: true
+          tags: |
+            ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye
+            ghcr.io/astraljays/jayswakezone-flask:latest
+
+      # Org packages default to private — make pullable without auth for Cloud Run / App Service
+      - name: Make package public
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            "/orgs/AstralJays/packages/container/jayswakezone-flask/visibility" \
+            -f visibility=public \
+          || gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            "/user/packages/container/jayswakezone-flask/visibility" \
+            -f visibility=public \
+          || echo "Set package visibility to public in GitHub UI if this step fails"

@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/AstralJays/JaysWakeZone"><img src="https://img.shields.io/badge/org-AstralJays-24292f.svg?logo=github" alt="AstralJays" /></a>
-  <img src="https://img.shields.io/badge/labs-1%20%2B%202%20ready-informational.svg" alt="Labs" />
+  <img src="https://img.shields.io/badge/labs-1%20%2B%202%20%2B%204%20ready-informational.svg" alt="Labs" />
   <img src="https://img.shields.io/badge/cloud-AWS%20%7C%20Azure%20%7C%20GCP-success.svg" alt="Clouds" />
   <img src="https://img.shields.io/badge/Upwind-SA%20installs-orange.svg" alt="Upwind" />
 </p>
@@ -26,9 +26,9 @@
 ## How SAs use this
 
 1. **Connect the cloud account** in Upwind (CSPM · agentless · DSPM · activity logs / CDR) — *this repo does not install Upwind*
-2. Pick **one** cloud → **one** `terraform apply` (Labs **1 + 2** together by default)
-3. Work Lab 1 (CSPM/DSPM loop), then install the **host eBPF sensor** and run Lab 2 attacks
-4. Operate findings in the console per SA Surf School Week 4 ops
+2. Pick **one** cloud → **one** `terraform apply` (Labs **1 + 2 + 4** together by default)
+3. Work storage CSPM loop, host sensor + attacks, then serverless / tracer
+4. **Lab 3 (K8s)** later when ready — stays off by default
 
 ## Labs
 
@@ -36,8 +36,8 @@
 |-----|--------------------|-------------|------------------|
 | **1 — Storage loop** | **Two** public buckets/containers + synthetic PII | — (account connect) | CSPM + DSPM; **remediate** one, **risk-accept** the other |
 | **2 — Host / eBPF** | Linux VM · DVWA-lite · Webmin `:10000` | Host sensor | L3/L4/L7 baseline + detections; FiU; exposed mgmt |
+| **4 — Serverless** | Lambda **or** App Service **or** Cloud Run | Tracer | Agentless / image CVEs + serverless runtime |
 | **3 — Kubernetes** | EKS \| AKS \| GKE | Cluster sensor | *Planned* — `lab3-kubernetes/` |
-| **4 — Serverless tracer** | Lambda \| Cloud Run \| App Service | Tracer | *Planned* — `lab4-serverless/` |
 
 ## Quick start — one apply
 
@@ -45,7 +45,7 @@
 git clone https://github.com/AstralJays/JaysWakeZone.git
 cd JaysWakeZone
 
-# Example: AWS  →  buckets + VM/app in one go
+# Example: AWS  →  buckets + VM/app + Lambda in one go
 cd infrastructure/aws
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply
@@ -57,33 +57,33 @@ Azure / GCP: same under `infrastructure/azure` or `infrastructure/gcp`.
 ```hcl
 enable_lab1 = true    # two PII stores
 enable_lab2 = true    # host VM + app + Webmin
-enable_lab3 = false   # planned
-enable_lab4 = false   # planned
+enable_lab4 = true    # serverless (Lambda / App Service / Cloud Run)
+enable_lab3 = false   # K8s later
 ```
 
 ### After apply
 
-**Lab 1**
+**Lab 1** — `lab1_remediate_*` (fix) · `lab1_exception_*` (risk-accept)  
+**Lab 2** — `lab2_application_url` · `lab2_webmin_url` (`admin` / `password`) · install host sensor on `lab2_public_ip`  
+**Lab 4** — `lab4_function_url` (AWS) · `lab4_app_url` (Azure) · `lab4_service_url` (GCP)
 
-- `lab1_remediate_*` — fix (block public → reassess clear)
-- `lab1_exception_*` — leave public; whitelist / accept risk
+### Lab 4 images (no ECR / ACR / GAR)
 
-**Lab 2**
-
-- App: `lab2_application_url` → `/labs`
-- Webmin: `lab2_webmin_url` → **`admin` / `password`**
-- Install the Upwind **host sensor** on `lab2_public_ip`, then generate traffic / exploits
+| Cloud | How it deploys |
+|-------|----------------|
+| AWS | **Zip Lambda** + Function URL — no container registry |
+| Azure / GCP | Pull public `ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye` (GitHub Actions builds it) |
 
 ## Layout
 
 ```
-lab1-public-data/       Synthetic PII seeds (both Lab 1 buckets)
-lab2-wakezone-app/      Host DVWA-lite + FiU heartbeats
+lab1-public-data/       Synthetic PII seeds
+lab2-wakezone-app/      Host DVWA-lite + FiU
 lab3-kubernetes/        Planned — EKS | AKS | GKE
-lab4-serverless/        Planned — Lambda | Cloud Run | App Service
+lab4-serverless/        Flask image + Lambda zip handler
 infrastructure/aws|azure|gcp
-docs/LEARNING-PATH.md   Portal module mapping
-docs/SA-ONBOARDING.md   Facilitator runbook
+docs/LEARNING-PATH.md
+docs/SA-ONBOARDING.md
 scripts/                VM install (app + Webmin) — no Upwind
 ```
 

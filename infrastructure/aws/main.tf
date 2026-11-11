@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4"
+    }
   }
 }
 
@@ -24,7 +28,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 ship together by default (one terraform apply).
+# Labs 1 + 2 + 4 ship together by default (one terraform apply). Lab 3 (K8s) later.
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -43,8 +47,8 @@ variable "enable_lab3" {
 
 variable "enable_lab4" {
   type        = bool
-  default     = false
-  description = "Planned — Lambda tracer. Keep false until lab4-serverless lands."
+  default     = true
+  description = "Lambda zip + Function URL (no ECR)."
 }
 
 variable "instance_type" {
@@ -317,4 +321,82 @@ output "lab2_webmin_credentials" {
 
 output "lab2_public_ip" {
   value = var.enable_lab2 ? aws_instance.lab2[0].public_ip : null
+}
+
+# ---------------------------------------------------------------------------
+# Lab 4 — Lambda zip + Function URL (no ECR / no Docker build)
+# ---------------------------------------------------------------------------
+
+data "archive_file" "lab4" {
+  count       = var.enable_lab4 ? 1 : 0
+  type        = "zip"
+  source_file = "${path.module}/../../lab4-serverless/lambda/handler.py"
+  output_path = "${path.module}/.build/lab4-lambda.zip"
+}
+
+resource "aws_iam_role" "lab4" {
+  count = var.enable_lab4 ? 1 : 0
+  name  = "${var.name_prefix}-lab4-lambda"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "lambda.amazonaws.com" }
+    }]
+  })
+
+  tags = {
+    Project = "JaysWakeZone"
+    Lab     = "4"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "lab4_basic" {
+  count      = var.enable_lab4 ? 1 : 0
+  role       = aws_iam_role.lab4[0].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_lambda_function" "lab4" {
+  count            = var.enable_lab4 ? 1 : 0
+  function_name    = "${var.name_prefix}-lab4"
+  role             = aws_iam_role.lab4[0].arn
+  handler          = "handler.handler"
+  runtime          = "python3.9"
+  filename         = data.archive_file.lab4[0].output_path
+  source_code_hash = data.archive_file.lab4[0].output_base64sha256
+  timeout          = 10
+  memory_size      = 128
+
+  tags = {
+    Project = "JaysWakeZone"
+    Lab     = "4"
+    Demo    = "serverless-tracer-candidate"
+  }
+}
+
+resource "aws_lambda_function_url" "lab4" {
+  count              = var.enable_lab4 ? 1 : 0
+  function_name      = aws_lambda_function.lab4[0].function_name
+  authorization_type = "NONE"
+}
+
+resource "aws_lambda_permission" "lab4_url" {
+  count                  = var.enable_lab4 ? 1 : 0
+  statement_id           = "FunctionURLAllowPublicAccess"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = aws_lambda_function.lab4[0].function_name
+  principal              = "*"
+  function_url_auth_type = "NONE"
+}
+
+output "lab4_function_name" {
+  value = var.enable_lab4 ? aws_lambda_function.lab4[0].function_name : null
+}
+
+output "lab4_function_url" {
+  description = "Public Lambda Function URL — SA installs tracer themselves"
+  value       = var.enable_lab4 ? aws_lambda_function_url.lab4[0].function_url : null
 }

@@ -33,7 +33,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 ship together by default (one terraform apply).
+# Labs 1 + 2 + 4 ship together by default (one terraform apply). Lab 3 (K8s) later.
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -52,8 +52,14 @@ variable "enable_lab3" {
 
 variable "enable_lab4" {
   type        = bool
-  default     = false
-  description = "Planned — Cloud Run tracer. Keep false until lab4-serverless lands."
+  default     = true
+  description = "Cloud Run from public GHCR image (no GAR)."
+}
+
+variable "serverless_image" {
+  type        = string
+  default     = "ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye"
+  description = "Public container image. Built by GitHub Actions — no GAR push."
 }
 
 variable "repo_url" {
@@ -235,4 +241,57 @@ output "lab2_webmin_credentials" {
 
 output "lab2_public_ip" {
   value = var.enable_lab2 ? google_compute_instance.lab2[0].network_interface[0].access_config[0].nat_ip : null
+}
+
+# ---------------------------------------------------------------------------
+# Lab 4 — Cloud Run from public GHCR image (no GAR build/push)
+# ---------------------------------------------------------------------------
+
+resource "google_cloud_run_v2_service" "lab4" {
+  count    = var.enable_lab4 ? 1 : 0
+  name     = "${var.name_prefix}-lab4"
+  location = var.region
+  ingress  = "INGRESS_TRAFFIC_ALL"
+
+  template {
+    containers {
+      image = var.serverless_image
+      ports {
+        container_port = 8080
+      }
+      resources {
+        limits = {
+          cpu    = "1"
+          memory = "512Mi"
+        }
+      }
+    }
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 2
+    }
+  }
+
+  labels = {
+    project = "jayswakezone"
+    lab     = "4"
+  }
+}
+
+resource "google_cloud_run_v2_service_iam_member" "lab4_public" {
+  count    = var.enable_lab4 ? 1 : 0
+  project  = var.project_id
+  location = google_cloud_run_v2_service.lab4[0].location
+  name     = google_cloud_run_v2_service.lab4[0].name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+output "lab4_service_name" {
+  value = var.enable_lab4 ? google_cloud_run_v2_service.lab4[0].name : null
+}
+
+output "lab4_service_url" {
+  description = "Cloud Run URL — SA installs tracer themselves"
+  value       = var.enable_lab4 ? google_cloud_run_v2_service.lab4[0].uri : null
 }

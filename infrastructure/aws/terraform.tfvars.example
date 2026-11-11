@@ -3,11 +3,11 @@ aws_region   = "us-east-1"
 
 name_prefix = "jayswakezone"
 
-# One apply = Lab 1 (two buckets) + Lab 2 (VM/app). Leave both true for onboarding day.
+# One apply = Lab 1 (buckets) + Lab 2 (VM) + Lab 4 (Lambda). K8s later.
 enable_lab1 = true
 enable_lab2 = true
+enable_lab4 = true
 enable_lab3 = false
-enable_lab4 = false
 
 # Lab 2 VM — sized so the SA can install a host sensor themselves
 instance_type  = "t3.large"

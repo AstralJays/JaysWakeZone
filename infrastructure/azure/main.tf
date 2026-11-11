@@ -26,7 +26,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 ship together by default (one terraform apply).
+# Labs 1 + 2 + 4 ship together by default (one terraform apply). Lab 3 (K8s) later.
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -45,8 +45,14 @@ variable "enable_lab3" {
 
 variable "enable_lab4" {
   type        = bool
-  default     = false
-  description = "Planned — App Service tracer. Keep false until lab4-serverless lands."
+  default     = true
+  description = "App Service from public GHCR image (no ACR)."
+}
+
+variable "serverless_image" {
+  type        = string
+  default     = "astraljays/jayswakezone-flask:3.9-bullseye"
+  description = "Image name:tag on ghcr.io (public). Built by GitHub Actions."
 }
 
 variable "admin_username" {
@@ -321,4 +327,65 @@ output "lab2_webmin_credentials" {
 
 output "lab2_public_ip" {
   value = var.enable_lab2 ? azurerm_public_ip.lab2[0].ip_address : null
+}
+
+# ---------------------------------------------------------------------------
+# Lab 4 — App Service from public GHCR image (no ACR build/push)
+# ---------------------------------------------------------------------------
+
+resource "azurerm_service_plan" "lab4" {
+  count               = var.enable_lab4 ? 1 : 0
+  name                = "${var.name_prefix}-lab4-plan"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  os_type             = "Linux"
+  sku_name            = "B1"
+
+  tags = {
+    Project = "JaysWakeZone"
+    Lab     = "4"
+  }
+}
+
+resource "azurerm_linux_web_app" "lab4" {
+  count               = var.enable_lab4 ? 1 : 0
+  name                = "${var.name_prefix}-lab4-${random_string.lab4[0].result}"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  service_plan_id     = azurerm_service_plan.lab4[0].id
+  https_only          = true
+
+  site_config {
+    always_on = false
+    application_stack {
+      docker_image_name   = var.serverless_image
+      docker_registry_url = "https://ghcr.io"
+    }
+  }
+
+  app_settings = {
+    WEBSITES_PORT = "8080"
+  }
+
+  tags = {
+    Project = "JaysWakeZone"
+    Lab     = "4"
+    Demo    = "serverless-tracer-candidate"
+  }
+}
+
+resource "random_string" "lab4" {
+  count   = var.enable_lab4 ? 1 : 0
+  length  = 4
+  special = false
+  upper   = false
+}
+
+output "lab4_app_name" {
+  value = var.enable_lab4 ? azurerm_linux_web_app.lab4[0].name : null
+}
+
+output "lab4_app_url" {
+  description = "App Service URL — SA installs tracer themselves"
+  value       = var.enable_lab4 ? "https://${azurerm_linux_web_app.lab4[0].default_hostname}" : null
 }

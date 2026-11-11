@@ -1,11 +1,14 @@
 location    = "eastus"
 name_prefix = "jayswakezone"
 
-# One apply = Lab 1 (two stores) + Lab 2 (VM/app). Leave both true for onboarding day.
+# One apply = Lab 1 (stores) + Lab 2 (VM) + Lab 4 (App Service). K8s later.
 enable_lab1 = true
 enable_lab2 = true
+enable_lab4 = true
 enable_lab3 = false
-enable_lab4 = false
+
+# Public GHCR image — no ACR. Built by GitHub Actions on this repo.
+# serverless_image = "astraljays/jayswakezone-flask:3.9-bullseye"
 
 admin_username = "azureuser"
 # Required for Lab 2:

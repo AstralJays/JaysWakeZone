@@ -3,11 +3,14 @@ region      = "us-central1"
 zone        = "us-central1-a"
 name_prefix = "jayswakezone"
 
-# One apply = Lab 1 (two buckets) + Lab 2 (VM/app). Leave both true for onboarding day.
+# One apply = Lab 1 (buckets) + Lab 2 (VM) + Lab 4 (Cloud Run). K8s later.
 enable_lab1 = true
 enable_lab2 = true
+enable_lab4 = true
 enable_lab3 = false
-enable_lab4 = false
+
+# Public GHCR image — no GAR. Built by GitHub Actions on this repo.
+# serverless_image = "ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye"
 
 repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
 repo_ref = "main"
