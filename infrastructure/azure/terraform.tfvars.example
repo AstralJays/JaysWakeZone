@@ -1,0 +1,15 @@
+location    = "eastus"
+name_prefix = "jayswakezone"
+enable_lab1 = true
+enable_lab2 = true
+
+admin_username = "azureuser"
+# Required for Lab 2:
+# ssh_public_key = "ssh-rsa AAAA..."
+
+repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
+repo_ref = "main"
+
+upwind_client_id          = ""
+upwind_client_secret      = ""
+upwind_agent_extra_config = "scanner-v2=true"

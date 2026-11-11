@@ -1,0 +1,59 @@
+{
+  "_warning": "SYNTHETIC DATA — Jay's Wake Zone SA onboarding lab only. Not real PII.",
+  "source_style": "https://dlptest.com/sample-data/",
+  "export_id": "jwz-cust-export-2026-demo",
+  "exported_at": "2026-03-01T12:00:00Z",
+  "record_count": 5,
+  "records": [
+    {
+      "customer_id": "WZ-10001",
+      "name": "Alex Rivera",
+      "email": "alex.rivera@example.com",
+      "ssn": "900-12-3456",
+      "dob": "1988-04-12",
+      "ccn": "4111111111111111",
+      "cc_exp": "08/28",
+      "zip": "92648"
+    },
+    {
+      "customer_id": "WZ-10002",
+      "name": "Jordan Lee",
+      "email": "jordan.lee@example.com",
+      "ssn": "900-23-4567",
+      "dob": "1991-11-03",
+      "ccn": "5500000000000004",
+      "cc_exp": "01/27",
+      "zip": "92101"
+    },
+    {
+      "customer_id": "WZ-10003",
+      "name": "Sam Nguyen",
+      "email": "sam.nguyen@example.com",
+      "ssn": "900-34-5678",
+      "dob": "1985-07-22",
+      "ccn": "340000000000009",
+      "cc_exp": "12/26",
+      "zip": "94107"
+    },
+    {
+      "customer_id": "WZ-10004",
+      "name": "Casey Brooks",
+      "email": "casey.brooks@example.com",
+      "ssn": "900-45-6789",
+      "dob": "1994-02-18",
+      "ccn": "6011000000000004",
+      "cc_exp": "03/29",
+      "zip": "97205"
+    },
+    {
+      "customer_id": "WZ-10005",
+      "name": "Riley Chen",
+      "email": "riley.chen@example.com",
+      "ssn": "900-56-7890",
+      "dob": "1990-09-30",
+      "ccn": "4000000000000002",
+      "cc_exp": "06/27",
+      "zip": "98101"
+    }
+  ]
+}

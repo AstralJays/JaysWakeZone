@@ -1,0 +1,9 @@
+services:
+  wakezone:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      JWZ_DEMO_AWS_ACCESS_KEY_ID: AKIAJWZDEMOEXAMPLE00
+      JWZ_DEMO_AWS_SECRET_ACCESS_KEY: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+      JWZ_DEMO_DB_PASSWORD: wakezone-super-secret

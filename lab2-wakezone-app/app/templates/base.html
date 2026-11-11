@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }} · Jay's Wake Zone</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/labs">Jay's Wake Zone</a>
+      <p class="tag">SA onboarding · DVWA-lite</p>
+      <nav>
+        <a href="/labs">All labs</a>
+        <a href="/login">SQLi login</a>
+        {% for lab in labs %}
+        <a href="/labs/{{ lab.slug }}">{{ lab.ref }} · {{ lab.title }}</a>
+        {% endfor %}
+      </nav>
+      {% if user %}
+      <p class="who">Signed in as {{ user.name }} ({{ user.role }})</p>
+      {% endif %}
+    </aside>
+    <main class="content">
+      <div class="warn">Intentionally vulnerable workshop app. Do not expose publicly.</div>
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

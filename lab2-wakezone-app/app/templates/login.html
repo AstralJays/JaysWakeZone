@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="hero">
+  <p class="eyebrow">A03</p>
+  <h1>SQL injection login</h1>
+  <p>Credentials are concatenated into SQLite. Auth bypass is the exercise.</p>
+</header>
+
+<section class="panel">
+  <form method="post" action="/login">
+    <label>Email</label>
+    <input name="email" value="jordan.lee@example.com" />
+    <label>Password</label>
+    <input name="password" type="text" value="jordanwaves" />
+    <button type="submit">Sign in</button>
+  </form>
+  {% if error %}
+  <p class="error">{{ error }}</p>
+  {% endif %}
+  {% if query %}
+  <pre>{{ query }}</pre>
+  {% endif %}
+</section>
+{% endblock %}

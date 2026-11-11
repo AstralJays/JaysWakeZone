@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="hero">
+  <p class="eyebrow">Lab 2</p>
+  <h1>Wake Zone vulnerability labs</h1>
+  <p>Five purposeful modules for SA onboarding — keep it simple, show clear signals.</p>
+</header>
+
+<section class="card-list">
+  {% for lab in labs %}
+  <a class="lab-card" href="/labs/{{ lab.slug }}">
+    <span class="ref">{{ lab.ref }}</span>
+    <strong>{{ lab.title }}</strong>
+    <span>{{ lab.blurb }}</span>
+  </a>
+  {% endfor %}
+</section>
+
+<section class="panel">
+  <h2>Demo accounts</h2>
+  <pre>jordan.lee@example.com / jordanwaves
+sam.nguyen@example.com / samwaves
+admin@jayswakezone.example / staffadmin
+
+SQLi bypass example: email  ' OR '1'='1  / password  anything</pre>
+</section>
+{% endblock %}

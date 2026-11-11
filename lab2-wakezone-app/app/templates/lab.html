@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="hero">
+  <p class="eyebrow">{{ lab.ref }}</p>
+  <h1>{{ lab.title }}</h1>
+  <p>{{ lab.blurb }}</p>
+</header>
+
+{% if lab.slug == 'sqli-login' %}
+<section class="panel">
+  <p>Use the <a href="/login">login form</a>. Try a normal account, then SQLi bypass.</p>
+</section>
+{% elif lab.slug == 'path-traversal' %}
+<section class="panel">
+  <h2>Vulnerable functionality</h2>
+  <form method="post" action="/labs/path-traversal">
+    <label>File name under public/</label>
+    <input name="name" value="welcome.txt" />
+    <p class="hint">Try <code>../secret.txt</code></p>
+    <button type="submit">Read file</button>
+  </form>
+</section>
+{% elif lab.slug == 'cmd-injection' %}
+<section class="panel">
+  <h2>Vulnerable functionality</h2>
+  <form method="post" action="/labs/cmd-injection">
+    <label>Host to ping</label>
+    <input name="host" value="127.0.0.1" />
+    <p class="hint">Try <code>127.0.0.1; id</code></p>
+    <button type="submit">Ping</button>
+  </form>
+</section>
+{% elif lab.slug == 'yaml-deser' %}
+<section class="panel">
+  <h2>Vulnerable functionality</h2>
+  <form method="post" action="/labs/yaml-deser">
+    <label>YAML payload</label>
+    <textarea name="payload" rows="6">name: rider
+board: hyperlite</textarea>
+    <p class="hint">PyYAML &lt; 5.4 unsafe load — demo deserialization surface.</p>
+    <button type="submit">Load YAML</button>
+  </form>
+</section>
+{% elif lab.slug == 'secrets' %}
+<section class="panel">
+  <p>Demo cloud keys and DB password are injected via environment variables for secret-scanning demos.</p>
+</section>
+{% endif %}
+
+{% if result %}
+<section class="panel">
+  <h2>Result</h2>
+  <pre>{{ result | tojson(indent=2) }}</pre>
+</section>
+{% endif %}
+{% endblock %}
