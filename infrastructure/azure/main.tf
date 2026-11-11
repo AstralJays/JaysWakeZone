@@ -46,13 +46,13 @@ variable "enable_lab3" {
 variable "enable_lab4" {
   type        = bool
   default     = true
-  description = "App Service from public GHCR image (no ACR)."
+  description = "App Service from public Docker Hub python:3.9-bullseye (no ACR)."
 }
 
 variable "serverless_image" {
   type        = string
-  default     = "astraljays/jayswakezone-flask:3.9-bullseye"
-  description = "Image name:tag on ghcr.io (public). Built by GitHub Actions."
+  default     = "python:3.9-bullseye"
+  description = "Public Docker Hub image — no build/push."
 }
 
 variable "admin_username" {
@@ -330,8 +330,27 @@ output "lab2_public_ip" {
 }
 
 # ---------------------------------------------------------------------------
-# Lab 4 — App Service from public GHCR image (no ACR build/push)
+# Lab 4 — App Service from public Docker Hub python:3.9-bullseye (no ACR)
 # ---------------------------------------------------------------------------
+
+locals {
+  lab4_boot = <<-BOOT
+    set -e
+    pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
+    cat >/tmp/jwz_app.py <<'PY'
+    from flask import Flask
+    app = Flask(__name__)
+    @app.route("/")
+    def index():
+        return {"status": "running", "demo": "cve-detection", "lab": "4-serverless"}
+    @app.route("/health")
+    def health():
+        return {"ok": True}
+    app.run(host="0.0.0.0", port=8080)
+    PY
+    exec python /tmp/jwz_app.py
+  BOOT
+}
 
 resource "azurerm_service_plan" "lab4" {
   count               = var.enable_lab4 ? 1 : 0
@@ -356,10 +375,11 @@ resource "azurerm_linux_web_app" "lab4" {
   https_only          = true
 
   site_config {
-    always_on = false
+    always_on        = false
+    app_command_line = local.lab4_boot
     application_stack {
       docker_image_name   = var.serverless_image
-      docker_registry_url = "https://ghcr.io"
+      docker_registry_url = "https://index.docker.io"
     }
   }
 

@@ -51,11 +51,11 @@ Pick **one cloud**.
 
 | Cloud | Deploy shape | Registry? |
 |-------|--------------|-----------|
-| AWS | Lambda zip + Function URL | **None** (avoids ECR) |
-| Azure | App Service Linux container | Public **GHCR** only |
-| GCP | Cloud Run | Public **GHCR** only |
+| AWS | Lambda zip + Function URL | **None** |
+| Azure | App Service ← Docker Hub `python:3.9-bullseye` | **None** (public Hub) |
+| GCP | Cloud Run ← Docker Hub `python:3.9-bullseye` | **None** (public Hub) |
 
-Image: `ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye` (`python:3.9-bullseye` + Flask 2.0.3) — agentless / image CVE candidate. SA installs the tracer themselves.
+No Actions / no image push. Boot command pip-installs Flask 2.0.3 on the old bullseye base (agentless CVE candidate). SA installs the tracer themselves.
 
 ---
 

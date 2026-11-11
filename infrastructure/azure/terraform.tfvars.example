@@ -7,8 +7,8 @@ enable_lab2 = true
 enable_lab4 = true
 enable_lab3 = false
 
-# Public GHCR image — no ACR. Built by GitHub Actions on this repo.
-# serverless_image = "astraljays/jayswakezone-flask:3.9-bullseye"
+# Public Docker Hub — no ACR / no Actions.
+# serverless_image = "python:3.9-bullseye"
 
 admin_username = "azureuser"
 # Required for Lab 2:

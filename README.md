@@ -67,12 +67,12 @@ enable_lab3 = false   # K8s later
 **Lab 2** — `lab2_application_url` · `lab2_webmin_url` (`admin` / `password`) · install host sensor on `lab2_public_ip`  
 **Lab 4** — `lab4_function_url` (AWS) · `lab4_app_url` (Azure) · `lab4_service_url` (GCP)
 
-### Lab 4 images (no ECR / ACR / GAR)
+### Lab 4 (no ECR / ACR / GAR / Actions)
 
 | Cloud | How it deploys |
 |-------|----------------|
-| AWS | **Zip Lambda** + Function URL — no container registry |
-| Azure / GCP | Pull public `ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye` (GitHub Actions builds it) |
+| AWS | **Zip Lambda** + Function URL |
+| Azure / GCP | Pull public Docker Hub `python:3.9-bullseye`, boot installs Flask 2.0.3 |
 
 ## Layout
 

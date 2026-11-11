@@ -9,8 +9,8 @@ enable_lab2 = true
 enable_lab4 = true
 enable_lab3 = false
 
-# Public GHCR image — no GAR. Built by GitHub Actions on this repo.
-# serverless_image = "ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye"
+# Public Docker Hub — no GAR / no Actions.
+# serverless_image = "docker.io/library/python:3.9-bullseye"
 
 repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
 repo_ref = "main"

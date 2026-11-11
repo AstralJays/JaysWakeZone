@@ -53,13 +53,13 @@ variable "enable_lab3" {
 variable "enable_lab4" {
   type        = bool
   default     = true
-  description = "Cloud Run from public GHCR image (no GAR)."
+  description = "Cloud Run from public Docker Hub python:3.9-bullseye (no GAR)."
 }
 
 variable "serverless_image" {
   type        = string
-  default     = "ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye"
-  description = "Public container image. Built by GitHub Actions — no GAR push."
+  default     = "docker.io/library/python:3.9-bullseye"
+  description = "Public Docker Hub image — no build/push."
 }
 
 variable "repo_url" {
@@ -244,8 +244,27 @@ output "lab2_public_ip" {
 }
 
 # ---------------------------------------------------------------------------
-# Lab 4 — Cloud Run from public GHCR image (no GAR build/push)
+# Lab 4 — Cloud Run from public Docker Hub python:3.9-bullseye (no GAR)
 # ---------------------------------------------------------------------------
+
+locals {
+  lab4_boot = <<-BOOT
+    set -e
+    pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
+    cat >/tmp/jwz_app.py <<'PY'
+    from flask import Flask
+    app = Flask(__name__)
+    @app.route("/")
+    def index():
+        return {"status": "running", "demo": "cve-detection", "lab": "4-serverless"}
+    @app.route("/health")
+    def health():
+        return {"ok": True}
+    app.run(host="0.0.0.0", port=8080)
+    PY
+    exec python /tmp/jwz_app.py
+  BOOT
+}
 
 resource "google_cloud_run_v2_service" "lab4" {
   count    = var.enable_lab4 ? 1 : 0
@@ -255,7 +274,9 @@ resource "google_cloud_run_v2_service" "lab4" {
 
   template {
     containers {
-      image = var.serverless_image
+      image   = var.serverless_image
+      command = ["bash", "-c"]
+      args    = [local.lab4_boot]
       ports {
         container_port = 8080
       }

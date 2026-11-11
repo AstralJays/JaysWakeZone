@@ -8,7 +8,7 @@ Wake Zone **never** installs Upwind — the SA does CSPM / agentless / DSPM / CD
 - Sandbox cloud account (AWS *or* Azure *or* GCP)
 - Terraform `>= 1.5`, cloud CLI
 - Upwind org access
-- For Azure/GCP Lab 4: public image `ghcr.io/astraljays/jayswakezone-flask:3.9-bullseye` (published by Actions on this repo)
+- For Azure/GCP Lab 4: Docker Hub `python:3.9-bullseye` (no custom image publish)
 
 ## Timeline (~half day)
 
@@ -37,8 +37,8 @@ Outputs: `lab2_application_url`, `lab2_webmin_url` (`admin` / `password`), `lab2
 | Cloud | Output |
 |-------|--------|
 | AWS | `lab4_function_url` (zip Lambda — no ECR) |
-| Azure | `lab4_app_url` (App Service ← GHCR) |
-| GCP | `lab4_service_url` (Cloud Run ← GHCR) |
+| Azure | `lab4_app_url` (App Service ← Docker Hub) |
+| GCP | `lab4_service_url` (Cloud Run ← Docker Hub) |
 
 ## Lab 3 (later)
 

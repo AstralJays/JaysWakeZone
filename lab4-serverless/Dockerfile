@@ -1,5 +1,4 @@
-# Intentionally older Debian + pinned Flask for agentless / image CVE demos.
-# Published to ghcr.io/astraljays/jayswakezone-flask (public) — no ECR/ACR/GAR needed.
+# Optional local build only. Terraform uses Docker Hub python:3.9-bullseye + boot command.
 FROM python:3.9-bullseye
 
 WORKDIR /app
