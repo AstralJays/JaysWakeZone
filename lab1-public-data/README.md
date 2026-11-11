@@ -1,15 +1,22 @@
-# Lab 1 — Public object storage with synthetic PII
+# Lab 1 — Storage CSPM / DSPM loop
 
-Intentionally **public** cloud storage seeded with fake customer / PCI-style exports for CSPM and data-exposure demos.
+Terraform seeds **two** intentionally public object stores (per cloud) with the same synthetic PII:
 
-> All files are **synthetic**. Patterns follow common DLP test datasets (e.g. [dlptest.com sample data](https://dlptest.com/sample-data/)). Not real people.
+| Resource | Purpose |
+|----------|---------|
+| **remediate** | Public + PII → SA **fixes** exposure and reassesses |
+| **exception** | Public + PII → SA **whitelists / accepts risk** |
+
+## Datasets
+
+Patterns follow [dlptest.com/sample-data](https://dlptest.com/sample-data/) (fake only):
 
 | File | Contents |
 |------|----------|
-| `name-ssn-ccn.csv` | Name + SSN + credit card (30 rows) |
-| `name-ssn-dob.csv` | Name + SSN + date of birth (30 rows) |
-| `name-ccn-zip.csv` | Name + card + ZIP + expiry (50 rows) |
-| `name-dob-email.csv` | Name + DOB + email (50 rows) |
-| `customers.json` | Compact JSON export for quick browser checks |
+| `name-ssn-ccn.csv` | Name + SSN + credit card |
+| `name-ssn-dob.csv` | Name + SSN + DOB |
+| `name-ccn-zip.csv` | Name + card + ZIP + expiry |
+| `name-dob-email.csv` | Name + DOB + email |
+| `customers.json` | Compact JSON export |
 
-Terraform under `infrastructure/{aws,azure,gcp}` uploads these objects and opens anonymous read/list.
+> Not real people. Workshop / sandbox only.

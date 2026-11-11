@@ -26,6 +26,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
+# Labs 1 + 2 ship together by default (one terraform apply).
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -34,6 +35,18 @@ variable "enable_lab1" {
 variable "enable_lab2" {
   type    = bool
   default = true
+}
+
+variable "enable_lab3" {
+  type        = bool
+  default     = false
+  description = "Planned — AKS. Keep false until lab3-kubernetes lands."
+}
+
+variable "enable_lab4" {
+  type        = bool
+  default     = false
+  description = "Planned — App Service tracer. Keep false until lab4-serverless lands."
 }
 
 variable "admin_username" {
@@ -57,23 +70,6 @@ variable "repo_ref" {
   default = "main"
 }
 
-variable "upwind_client_id" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "upwind_client_secret" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "upwind_agent_extra_config" {
-  type    = string
-  default = "scanner-v2=true"
-}
-
 locals {
   data_dir = "${path.module}/../../lab1-public-data"
   lab1_objects = {
@@ -82,6 +78,20 @@ locals {
     "exports/name-ccn-zip.csv"   = { file = "name-ccn-zip.csv", content_type = "text/csv" }
     "exports/name-dob-email.csv" = { file = "name-dob-email.csv", content_type = "text/csv" }
     "exports/customers.json"     = { file = "customers.json", content_type = "application/json" }
+  }
+  # Two storage accounts = full CSPM loop without re-breaking.
+  lab1_stores = var.enable_lab1 ? {
+    remediate = { short = "rem", cspm_loop = "remediate" }
+    exception = { short = "exc", cspm_loop = "risk-accept" }
+  } : {}
+  lab1_object_keys = {
+    for pair in setproduct(keys(local.lab1_stores), keys(local.lab1_objects)) :
+    "${pair[0]}|${pair[1]}" => {
+      store_key    = pair[0]
+      object_key   = pair[1]
+      file         = local.lab1_objects[pair[1]].file
+      content_type = local.lab1_objects[pair[1]].content_type
+    }
   }
   needs_network = var.enable_lab2
 }
@@ -93,46 +103,47 @@ resource "azurerm_resource_group" "main" {
 }
 
 # ---------------------------------------------------------------------------
-# Lab 1 — public Blob container with synthetic PII
+# Lab 1 — two public Blob stores + synthetic PII (remediate + risk-accept)
 # ---------------------------------------------------------------------------
 
+resource "random_string" "suffix" {
+  for_each = local.lab1_stores
+  length   = 6
+  special  = false
+  upper    = false
+}
+
 resource "azurerm_storage_account" "lab1" {
-  count                    = var.enable_lab1 ? 1 : 0
-  name                     = substr(replace("${var.name_prefix}pii${random_string.suffix[0].result}", "-", ""), 0, 24)
-  resource_group_name      = azurerm_resource_group.main.name
-  location                 = azurerm_resource_group.main.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
+  for_each                        = local.lab1_stores
+  name                            = substr(replace("${var.name_prefix}${each.value.short}${random_string.suffix[each.key].result}", "-", ""), 0, 24)
+  resource_group_name             = azurerm_resource_group.main.name
+  location                        = azurerm_resource_group.main.location
+  account_tier                    = "Standard"
+  account_replication_type        = "LRS"
   allow_nested_items_to_be_public = true
 
   tags = {
     Project     = "JaysWakeZone"
     Lab         = "1"
+    CspmLoop    = each.value.cspm_loop
     DemoFinding = "public-blob-container"
     DataClass   = "synthetic-pii"
   }
 }
 
-resource "random_string" "suffix" {
-  count   = var.enable_lab1 ? 1 : 0
-  length  = 6
-  special = false
-  upper   = false
-}
-
 resource "azurerm_storage_container" "lab1" {
-  count                 = var.enable_lab1 ? 1 : 0
+  for_each              = local.lab1_stores
   name                  = "exports"
-  storage_account_name  = azurerm_storage_account.lab1[0].name
+  storage_account_name  = azurerm_storage_account.lab1[each.key].name
   container_access_type = "blob"
 }
 
 resource "azurerm_storage_blob" "lab1_objects" {
-  for_each = var.enable_lab1 ? local.lab1_objects : {}
+  for_each = local.lab1_object_keys
 
-  name                   = trimprefix(each.key, "exports/")
-  storage_account_name   = azurerm_storage_account.lab1[0].name
-  storage_container_name = azurerm_storage_container.lab1[0].name
+  name                   = trimprefix(each.value.object_key, "exports/")
+  storage_account_name   = azurerm_storage_account.lab1[each.value.store_key].name
+  storage_container_name = azurerm_storage_container.lab1[each.value.store_key].name
   type                   = "Block"
   source                 = "${local.data_dir}/${each.value.file}"
   content_type           = each.value.content_type
@@ -238,25 +249,21 @@ locals {
     runcmd:
       - export REPO_URL='${var.repo_url}'
       - export REPO_REF='${var.repo_ref}'
-      - export UPWIND_CLIENT_ID='${var.upwind_client_id}'
-      - export UPWIND_CLIENT_SECRET='${var.upwind_client_secret}'
-      - export UPWIND_AGENT_EXTRA_CONFIG='${var.upwind_agent_extra_config}'
       - git clone --depth 1 --branch "${var.repo_ref}" "${var.repo_url}" /tmp/jwz
-      - chmod +x /tmp/jwz/scripts/install-app.sh /tmp/jwz/scripts/install-upwind-sensor.sh
-      - /tmp/jwz/scripts/install-upwind-sensor.sh || true
+      - chmod +x /tmp/jwz/scripts/install-app.sh
       - /tmp/jwz/scripts/install-app.sh
   EOF
 }
 
 resource "azurerm_linux_virtual_machine" "lab2" {
-  count               = var.enable_lab2 ? 1 : 0
-  name                = "${var.name_prefix}-vm"
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
-  size                = "Standard_D2s_v5"
-  admin_username      = var.admin_username
+  count                 = var.enable_lab2 ? 1 : 0
+  name                  = "${var.name_prefix}-vm"
+  resource_group_name   = azurerm_resource_group.main.name
+  location              = azurerm_resource_group.main.location
+  size                  = "Standard_D2s_v5"
+  admin_username        = var.admin_username
   network_interface_ids = [azurerm_network_interface.lab2[0].id]
-  custom_data         = base64encode(local.cloud_init)
+  custom_data           = base64encode(local.cloud_init)
 
   admin_ssh_key {
     username   = var.admin_username
@@ -282,12 +289,22 @@ resource "azurerm_linux_virtual_machine" "lab2" {
   }
 }
 
-output "lab1_storage_account" {
-  value = var.enable_lab1 ? azurerm_storage_account.lab1[0].name : null
+output "lab1_remediate_storage_account" {
+  description = "Fix this one (make private → reassess clear)"
+  value       = var.enable_lab1 ? azurerm_storage_account.lab1["remediate"].name : null
 }
 
-output "lab1_public_url" {
-  value = var.enable_lab1 ? "https://${azurerm_storage_account.lab1[0].name}.blob.core.windows.net/exports/customers.json" : null
+output "lab1_remediate_url" {
+  value = var.enable_lab1 ? "https://${azurerm_storage_account.lab1["remediate"].name}.blob.core.windows.net/exports/customers.json" : null
+}
+
+output "lab1_exception_storage_account" {
+  description = "Leave public; whitelist / accept risk"
+  value       = var.enable_lab1 ? azurerm_storage_account.lab1["exception"].name : null
+}
+
+output "lab1_exception_url" {
+  value = var.enable_lab1 ? "https://${azurerm_storage_account.lab1["exception"].name}.blob.core.windows.net/exports/customers.json" : null
 }
 
 output "lab2_application_url" {

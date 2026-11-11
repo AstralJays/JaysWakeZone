@@ -33,6 +33,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
+# Labs 1 + 2 ship together by default (one terraform apply).
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -41,6 +42,18 @@ variable "enable_lab1" {
 variable "enable_lab2" {
   type    = bool
   default = true
+}
+
+variable "enable_lab3" {
+  type        = bool
+  default     = false
+  description = "Planned — GKE. Keep false until lab3-kubernetes lands."
+}
+
+variable "enable_lab4" {
+  type        = bool
+  default     = false
+  description = "Planned — Cloud Run tracer. Keep false until lab4-serverless lands."
 }
 
 variable "repo_url" {
@@ -53,23 +66,6 @@ variable "repo_ref" {
   default = "main"
 }
 
-variable "upwind_client_id" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "upwind_client_secret" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "upwind_agent_extra_config" {
-  type    = string
-  default = "scanner-v2=true"
-}
-
 locals {
   data_dir = "${path.module}/../../lab1-public-data"
   lab1_objects = {
@@ -79,42 +75,57 @@ locals {
     "exports/name-dob-email.csv" = { file = "name-dob-email.csv", content_type = "text/csv" }
     "exports/customers.json"     = { file = "customers.json", content_type = "application/json" }
   }
+  # Two buckets = full CSPM loop without re-breaking: remediate one, risk-accept the other.
+  lab1_buckets = var.enable_lab1 ? {
+    remediate = { suffix = "remediate", cspm_loop = "remediate" }
+    exception = { suffix = "exception", cspm_loop = "risk-accept" }
+  } : {}
+  lab1_object_keys = {
+    for pair in setproduct(keys(local.lab1_buckets), keys(local.lab1_objects)) :
+    "${pair[0]}|${pair[1]}" => {
+      bucket_key   = pair[0]
+      object_key   = pair[1]
+      file         = local.lab1_objects[pair[1]].file
+      content_type = local.lab1_objects[pair[1]].content_type
+    }
+  }
 }
 
 data "google_project" "current" {}
 
 # ---------------------------------------------------------------------------
-# Lab 1 — public GCS bucket with synthetic PII
+# Lab 1 — two public GCS buckets + synthetic PII (remediate + risk-accept)
 # ---------------------------------------------------------------------------
 
 resource "google_storage_bucket" "lab1" {
-  count         = var.enable_lab1 ? 1 : 0
-  name          = "${var.name_prefix}-pii-${data.google_project.current.number}"
+  for_each      = local.lab1_buckets
+  name          = "${var.name_prefix}-${each.value.suffix}-${data.google_project.current.number}"
   location      = var.region
   force_destroy = true
 
   uniform_bucket_level_access = true
 
   labels = {
-    project     = "jayswakezone"
-    lab         = "1"
+    project      = "jayswakezone"
+    lab          = "1"
+    cspm_loop    = each.value.cspm_loop
     demo_finding = "public-gcs-bucket"
-    dataclass   = "synthetic-pii"
+    dataclass    = "synthetic-pii"
   }
 }
 
 resource "google_storage_bucket_iam_member" "lab1_public" {
-  count  = var.enable_lab1 ? 1 : 0
-  bucket = google_storage_bucket.lab1[0].name
-  role   = "roles/storage.objectViewer"
-  member = "allUsers"
+  for_each = local.lab1_buckets
+  bucket   = google_storage_bucket.lab1[each.key].name
+  role     = "roles/storage.objectViewer"
+  member   = "allUsers"
 }
 
 resource "google_storage_bucket_object" "lab1_objects" {
-  for_each = var.enable_lab1 ? local.lab1_objects : {}
+  for_each = local.lab1_object_keys
 
-  name         = each.key
-  bucket       = google_storage_bucket.lab1[0].name
+  name         = each.value.object_key
+  bucket       = google_storage_bucket.lab1[each.value.bucket_key].name
   source       = "${local.data_dir}/${each.value.file}"
   content_type = each.value.content_type
 }
@@ -157,14 +168,10 @@ locals {
     set -euxo pipefail
     export REPO_URL='${var.repo_url}'
     export REPO_REF='${var.repo_ref}'
-    export UPWIND_CLIENT_ID='${var.upwind_client_id}'
-    export UPWIND_CLIENT_SECRET='${var.upwind_client_secret}'
-    export UPWIND_AGENT_EXTRA_CONFIG='${var.upwind_agent_extra_config}'
     apt-get update -y
     apt-get install -y git curl ca-certificates
     git clone --depth 1 --branch "${var.repo_ref}" "${var.repo_url}" /tmp/jwz
-    chmod +x /tmp/jwz/scripts/install-app.sh /tmp/jwz/scripts/install-upwind-sensor.sh
-    /tmp/jwz/scripts/install-upwind-sensor.sh || true
+    chmod +x /tmp/jwz/scripts/install-app.sh
     /tmp/jwz/scripts/install-app.sh
   EOF
 }
@@ -196,12 +203,22 @@ resource "google_compute_instance" "lab2" {
   }
 }
 
-output "lab1_bucket_name" {
-  value = var.enable_lab1 ? google_storage_bucket.lab1[0].name : null
+output "lab1_remediate_bucket" {
+  description = "Fix this one (remove public IAM → reassess clear)"
+  value       = var.enable_lab1 ? google_storage_bucket.lab1["remediate"].name : null
 }
 
-output "lab1_public_url" {
-  value = var.enable_lab1 ? "https://storage.googleapis.com/${google_storage_bucket.lab1[0].name}/exports/customers.json" : null
+output "lab1_remediate_url" {
+  value = var.enable_lab1 ? "https://storage.googleapis.com/${google_storage_bucket.lab1["remediate"].name}/exports/customers.json" : null
+}
+
+output "lab1_exception_bucket" {
+  description = "Leave public; whitelist / accept risk"
+  value       = var.enable_lab1 ? google_storage_bucket.lab1["exception"].name : null
+}
+
+output "lab1_exception_url" {
+  value = var.enable_lab1 ? "https://storage.googleapis.com/${google_storage_bucket.lab1["exception"].name}/exports/customers.json" : null
 }
 
 output "lab2_application_url" {

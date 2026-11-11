@@ -24,6 +24,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
+# Labs 1 + 2 ship together by default (one terraform apply).
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -32,6 +33,18 @@ variable "enable_lab1" {
 variable "enable_lab2" {
   type    = bool
   default = true
+}
+
+variable "enable_lab3" {
+  type        = bool
+  default     = false
+  description = "Planned — EKS. Keep false until lab3-kubernetes lands."
+}
+
+variable "enable_lab4" {
+  type        = bool
+  default     = false
+  description = "Planned — Lambda tracer. Keep false until lab4-serverless lands."
 }
 
 variable "instance_type" {
@@ -64,23 +77,6 @@ variable "repo_ref" {
   default = "main"
 }
 
-variable "upwind_client_id" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "upwind_client_secret" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
-variable "upwind_agent_extra_config" {
-  type    = string
-  default = "scanner-v2=true"
-}
-
 provider "aws" {
   region  = var.aws_region
   profile = var.aws_profile != "" ? var.aws_profile : null
@@ -107,10 +103,30 @@ locals {
     "exports/name-dob-email.csv" = { file = "name-dob-email.csv", content_type = "text/csv" }
     "exports/customers.json"     = { file = "customers.json", content_type = "application/json" }
   }
+  # Two buckets = full CSPM loop without re-breaking: remediate one, risk-accept the other.
+  lab1_buckets = var.enable_lab1 ? {
+    remediate = {
+      suffix    = "remediate"
+      cspm_loop = "remediate"
+    }
+    exception = {
+      suffix    = "exception"
+      cspm_loop = "risk-accept"
+    }
+  } : {}
+  lab1_object_keys = {
+    for pair in setproduct(keys(local.lab1_buckets), keys(local.lab1_objects)) :
+    "${pair[0]}|${pair[1]}" => {
+      bucket_key   = pair[0]
+      object_key   = pair[1]
+      file         = local.lab1_objects[pair[1]].file
+      content_type = local.lab1_objects[pair[1]].content_type
+    }
+  }
 }
 
 # ---------------------------------------------------------------------------
-# Lab 1 — intentionally public S3 with synthetic PII
+# Lab 1 — two public S3 buckets + synthetic PII (remediate + risk-accept)
 # ---------------------------------------------------------------------------
 
 resource "aws_s3_account_public_access_block" "demo" {
@@ -122,14 +138,15 @@ resource "aws_s3_account_public_access_block" "demo" {
 }
 
 resource "aws_s3_bucket" "lab1" {
-  count         = var.enable_lab1 ? 1 : 0
-  bucket        = "${var.name_prefix}-pii-${data.aws_caller_identity.current.account_id}"
+  for_each      = local.lab1_buckets
+  bucket        = "${var.name_prefix}-${each.value.suffix}-${data.aws_caller_identity.current.account_id}"
   force_destroy = true
 
   tags = {
-    Name        = "${var.name_prefix}-public-pii"
+    Name        = "${var.name_prefix}-${each.value.suffix}"
     Project     = "JaysWakeZone"
     Lab         = "1"
+    CspmLoop    = each.value.cspm_loop
     DemoFinding = "public-s3-bucket"
     CSPMCheck   = "s3-bucket-public-read"
     DataClass   = "synthetic-pii"
@@ -137,8 +154,8 @@ resource "aws_s3_bucket" "lab1" {
 }
 
 resource "aws_s3_bucket_public_access_block" "lab1" {
-  count  = var.enable_lab1 ? 1 : 0
-  bucket = aws_s3_bucket.lab1[0].id
+  for_each = local.lab1_buckets
+  bucket   = aws_s3_bucket.lab1[each.key].id
 
   block_public_acls       = false
   block_public_policy     = false
@@ -147,8 +164,8 @@ resource "aws_s3_bucket_public_access_block" "lab1" {
 }
 
 resource "aws_s3_bucket_policy" "lab1_public_read" {
-  count  = var.enable_lab1 ? 1 : 0
-  bucket = aws_s3_bucket.lab1[0].id
+  for_each = local.lab1_buckets
+  bucket   = aws_s3_bucket.lab1[each.key].id
 
   depends_on = [
     aws_s3_account_public_access_block.demo,
@@ -163,24 +180,24 @@ resource "aws_s3_bucket_policy" "lab1_public_read" {
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.lab1[0].arn}/*"
+        Resource  = "${aws_s3_bucket.lab1[each.key].arn}/*"
       },
       {
         Sid       = "PublicListBucket"
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:ListBucket"
-        Resource  = aws_s3_bucket.lab1[0].arn
+        Resource  = aws_s3_bucket.lab1[each.key].arn
       },
     ]
   })
 }
 
 resource "aws_s3_object" "lab1_objects" {
-  for_each = var.enable_lab1 ? local.lab1_objects : {}
+  for_each = local.lab1_object_keys
 
-  bucket       = aws_s3_bucket.lab1[0].id
-  key          = each.key
+  bucket       = aws_s3_bucket.lab1[each.value.bucket_key].id
+  key          = each.value.object_key
   source       = "${local.data_dir}/${each.value.file}"
   content_type = each.value.content_type
   etag         = filemd5("${local.data_dir}/${each.value.file}")
@@ -235,14 +252,10 @@ locals {
     set -euxo pipefail
     export REPO_URL='${var.repo_url}'
     export REPO_REF='${var.repo_ref}'
-    export UPWIND_CLIENT_ID='${var.upwind_client_id}'
-    export UPWIND_CLIENT_SECRET='${var.upwind_client_secret}'
-    export UPWIND_AGENT_EXTRA_CONFIG='${var.upwind_agent_extra_config}'
 
     apt-get update -y && apt-get install -y git curl ca-certificates
     git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" /tmp/jwz
-    chmod +x /tmp/jwz/scripts/install-app.sh /tmp/jwz/scripts/install-upwind-sensor.sh
-    /tmp/jwz/scripts/install-upwind-sensor.sh || true
+    chmod +x /tmp/jwz/scripts/install-app.sh
     /tmp/jwz/scripts/install-app.sh
   EOF
 }
@@ -268,16 +281,26 @@ resource "aws_instance" "lab2" {
   }
 }
 
-output "lab1_bucket_name" {
-  value = var.enable_lab1 ? aws_s3_bucket.lab1[0].id : null
+output "lab1_remediate_bucket" {
+  description = "Fix this one (block public → reassess clear)"
+  value       = var.enable_lab1 ? aws_s3_bucket.lab1["remediate"].id : null
 }
 
-output "lab1_public_url" {
-  value = var.enable_lab1 ? "https://${aws_s3_bucket.lab1[0].bucket}.s3.${var.aws_region}.amazonaws.com/exports/customers.json" : null
+output "lab1_remediate_url" {
+  value = var.enable_lab1 ? "https://${aws_s3_bucket.lab1["remediate"].bucket}.s3.${var.aws_region}.amazonaws.com/exports/customers.json" : null
+}
+
+output "lab1_exception_bucket" {
+  description = "Leave public; whitelist / accept risk"
+  value       = var.enable_lab1 ? aws_s3_bucket.lab1["exception"].id : null
+}
+
+output "lab1_exception_url" {
+  value = var.enable_lab1 ? "https://${aws_s3_bucket.lab1["exception"].bucket}.s3.${var.aws_region}.amazonaws.com/exports/customers.json" : null
 }
 
 output "lab1_list_hint" {
-  value = var.enable_lab1 ? "aws s3 ls s3://${aws_s3_bucket.lab1[0].id}/ --no-sign-request" : null
+  value = var.enable_lab1 ? "aws s3 ls s3://${aws_s3_bucket.lab1["remediate"].id}/ --no-sign-request" : null
 }
 
 output "lab2_application_url" {
