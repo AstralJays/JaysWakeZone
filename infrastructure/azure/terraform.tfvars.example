@@ -12,4 +12,4 @@ repo_ref = "main"
 
 upwind_client_id          = ""
 upwind_client_secret      = ""
-upwind_agent_extra_config = "scanner-v2=true"
+upwind_agent_extra_config = "scanner-v2=true,inuse-python=true,inuse-skip-young-process=false"

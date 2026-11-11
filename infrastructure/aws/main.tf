@@ -211,6 +211,14 @@ resource "aws_security_group" "lab2" {
     cidr_blocks = [var.app_ingress_cidr]
   }
 
+  ingress {
+    description = "Webmin (intentional exposure — admin/password)"
+    from_port   = 10000
+    to_port     = 10000
+    protocol    = "tcp"
+    cidr_blocks = [var.app_ingress_cidr]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -274,6 +282,14 @@ output "lab1_list_hint" {
 
 output "lab2_application_url" {
   value = var.enable_lab2 ? "http://${aws_instance.lab2[0].public_ip}:8080/labs" : null
+}
+
+output "lab2_webmin_url" {
+  value = var.enable_lab2 ? "https://${aws_instance.lab2[0].public_ip}:10000" : null
+}
+
+output "lab2_webmin_credentials" {
+  value = var.enable_lab2 ? "admin / password" : null
 }
 
 output "lab2_public_ip" {

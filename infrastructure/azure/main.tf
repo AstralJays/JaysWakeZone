@@ -196,6 +196,18 @@ resource "azurerm_network_security_group" "lab2" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+
+  security_rule {
+    name                       = "Webmin"
+    priority                   = 1003
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "10000"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_network_interface" "lab2" {
@@ -280,6 +292,14 @@ output "lab1_public_url" {
 
 output "lab2_application_url" {
   value = var.enable_lab2 ? "http://${azurerm_public_ip.lab2[0].ip_address}:8080/labs" : null
+}
+
+output "lab2_webmin_url" {
+  value = var.enable_lab2 ? "https://${azurerm_public_ip.lab2[0].ip_address}:10000" : null
+}
+
+output "lab2_webmin_credentials" {
+  value = var.enable_lab2 ? "admin / password" : null
 }
 
 output "lab2_public_ip" {

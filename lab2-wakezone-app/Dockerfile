@@ -2,8 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# ghostscript enables Pillow EPS path (CVE-2026-112900 Ghostscript arg injection)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      curl iputils-ping \
+      curl iputils-ping ghostscript \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

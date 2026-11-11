@@ -40,15 +40,31 @@ Expected objects:
 - `exports/name-dob-email.csv`
 - `exports/customers.json`
 
-## Lab 2 — Wake Zone DVWA-lite
+## Lab 2 — Wake Zone DVWA-lite (+ Function in use)
 
 1. Open `lab2_application_url` (port **8080**).
-2. Land on `/labs` — run modules in order:
+2. **Function in use first** — six CVEs, all heartbeating every 60s:
+
+   | Lab | CVE | Function | Exploit |
+   |-----|-----|----------|---------|
+   | `/labs/fiu-pillow-imagemath` | CVE-2023-50447 | `PIL.ImageMath.eval` | `POST /api/board/preview` |
+   | `/labs/fiu-pillow-jpeg` | CVE-2026-112403 | `Image.thumbnail` → JPEG decode | `POST /api/image/thumbnail` |
+   | `/labs/fiu-pillow-eps` | CVE-2026-112900 | `EpsImagePlugin` → Ghostscript | `POST /api/image/eps` |
+   | `/labs/fiu-brotli` | CVE-2026-111497 | `DecodeBlockTypeAndLength` | `POST /api/decode/brotli` |
+   | `/labs/fiu-yaml` | CVE-2020-14343 | `yaml.load(Loader=…)` | `POST /api/checkout` |
+   | `/labs/fiu-tarfile` | CVE-2007-4559 | `TarFile.extractall` | `POST /api/archive/extract` |
+
+   - In Upwind: Vulnerabilities → filter **Function in use**
+   - Skipped on purpose: XXE CVE-2022-48565 (needs ancient CPython), SymPy/Triton (too heavy), interpreter CVEs (2021-29921 / 3177 / 2022-37454)
+3. Classic modules:
    - **SQLi login** — `' OR '1'='1`
-   - **Path traversal** — read `../secret.txt` style paths
-   - **Command injection** — ping helper with `; id`
-   - **Hardcoded secrets** — note env / demo keys on `/labs/secrets`
-3. Point Upwind (or equivalent) at the host/container and correlate.
+   - **Path traversal** — `../secret.txt`
+   - **Command injection** — `; id`
+   - **Hardcoded secrets** — `/labs/secrets`
+4. **Exposed Webmin** — `lab2_webmin_url` (`https://IP:10000`)
+   - Credentials: **`admin` / `password`**
+   - Story: internet-facing Linux admin UI → weak creds → full host compromise (sudo)
+5. Sensor tip: `inuse-python=true,inuse-skip-young-process=false` (defaults in `terraform.tfvars.example`).
 
 Demo accounts (also shown in the UI):
 

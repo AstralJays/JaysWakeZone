@@ -144,7 +144,7 @@ resource "google_compute_firewall" "lab2" {
 
   allow {
     protocol = "tcp"
-    ports    = ["22", "8080"]
+    ports    = ["22", "8080", "10000"]
   }
 
   source_ranges = ["0.0.0.0/0"]
@@ -206,6 +206,14 @@ output "lab1_public_url" {
 
 output "lab2_application_url" {
   value = var.enable_lab2 ? "http://${google_compute_instance.lab2[0].network_interface[0].access_config[0].nat_ip}:8080/labs" : null
+}
+
+output "lab2_webmin_url" {
+  value = var.enable_lab2 ? "https://${google_compute_instance.lab2[0].network_interface[0].access_config[0].nat_ip}:10000" : null
+}
+
+output "lab2_webmin_credentials" {
+  value = var.enable_lab2 ? "admin / password" : null
 }
 
 output "lab2_public_ip" {

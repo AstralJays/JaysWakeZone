@@ -39,4 +39,9 @@ EOF
 systemctl daemon-reload
 systemctl enable --now jayswakezone.service
 
+# Exposed Linux admin UI — intentional weak creds (admin / password)
+chmod +x "$APP_DIR/scripts/install-webmin.sh"
+WEBMIN_USER=admin WEBMIN_PASS=password "$APP_DIR/scripts/install-webmin.sh" || true
+
 echo "Wake Zone listening on :${PORT} — open /labs"
+echo "Webmin listening on :10000 — login admin / password"
