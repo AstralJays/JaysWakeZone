@@ -1,20 +1,20 @@
+# Grab and go — copy to terraform.tfvars, then:
+#   terraform init && terraform apply && terraform output
+
 location    = "eastus"
 name_prefix = "jayswakezone"
 
-# One apply = Lab 1 (stores) + Lab 2 (VM) + Lab 4 (App Service). K8s later.
 enable_lab1 = true
 enable_lab2 = true
 enable_lab4 = true
 enable_lab3 = false
 
-# Public Docker Hub — no ACR / no Actions.
-# serverless_image = "python:3.9-bullseye"
-
 admin_username = "azureuser"
-# Required for Lab 2:
+# Required:
 # ssh_public_key = "ssh-rsa AAAA..."
 
+# Lab 2 VM clones this repo for the app. Use your fork URL only if you changed lab2 code.
 repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
 repo_ref = "main"
 
-# Do NOT put Upwind credentials here — SAs install/connect Upwind themselves.
+# Do NOT put Upwind credentials here — install sensors yourself after apply.
