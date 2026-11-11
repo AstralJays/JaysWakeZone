@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cloud-init / manual installer for Lab 2 — Jay's Wake Zone DVWA-lite.
+# Cloud-init / manual installer for Lab 2 — VM and Hosts (DVWA-lite + Webmin).
 set -euxo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/AstralJays/JaysWakeZone.git}"

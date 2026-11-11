@@ -1,6 +1,6 @@
-# Lab 3 — Kubernetes (planned)
+# Lab 4 — Kubernetes (planned)
 
-**Status:** stub — not deployed yet (`enable_lab3 = false`).
+**Status:** stub — not deployed yet (`enable_lab4 = false`). Last lab in the path.
 
 | Cloud | Target |
 |-------|--------|

@@ -6,7 +6,7 @@ def handler(event, context):
     body = {
         "status": "running",
         "demo": "cve-detection",
-        "lab": "4-serverless",
+        "lab": "3-serverless",
         "runtime": "aws-lambda",
     }
     return {

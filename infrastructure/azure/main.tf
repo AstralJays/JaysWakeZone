@@ -26,7 +26,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 + 4 ship together by default (one terraform apply). Lab 3 (K8s) later.
+# Labs 1 + 2 + 3 ship together by default. Lab 4 (K8s) last / later.
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -39,14 +39,14 @@ variable "enable_lab2" {
 
 variable "enable_lab3" {
   type        = bool
-  default     = false
-  description = "Planned — AKS. Keep false until lab3-kubernetes lands."
+  default     = true
+  description = "App Service from public Docker Hub python:3.9-bullseye (no ACR)."
 }
 
 variable "enable_lab4" {
   type        = bool
-  default     = true
-  description = "App Service from public Docker Hub python:3.9-bullseye (no ACR)."
+  default     = false
+  description = "Planned — AKS. Keep false until lab4-kubernetes lands."
 }
 
 variable "serverless_image" {
@@ -63,7 +63,7 @@ variable "admin_username" {
 variable "ssh_public_key" {
   type        = string
   default     = ""
-  description = "SSH public key for the Lab 2 VM (required when enable_lab2=true)"
+  description = "SSH public key for Lab 2 VM and Hosts (required when enable_lab2=true)"
 }
 
 variable "repo_url" {
@@ -292,6 +292,7 @@ resource "azurerm_linux_virtual_machine" "lab2" {
   tags = {
     Project = "JaysWakeZone"
     Lab     = "2"
+    Track   = "VM-and-Hosts"
   }
 }
 
@@ -330,11 +331,11 @@ output "lab2_public_ip" {
 }
 
 # ---------------------------------------------------------------------------
-# Lab 4 — App Service from public Docker Hub python:3.9-bullseye (no ACR)
+# Lab 3 — App Service from public Docker Hub python:3.9-bullseye (no ACR)
 # ---------------------------------------------------------------------------
 
 locals {
-  lab4_boot = <<-BOOT
+  lab3_boot = <<-BOOT
     set -e
     pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
     cat >/tmp/jwz_app.py <<'PY'
@@ -342,7 +343,7 @@ locals {
     app = Flask(__name__)
     @app.route("/")
     def index():
-        return {"status": "running", "demo": "cve-detection", "lab": "4-serverless"}
+        return {"status": "running", "demo": "cve-detection", "lab": "3-serverless"}
     @app.route("/health")
     def health():
         return {"ok": True}
@@ -352,9 +353,9 @@ locals {
   BOOT
 }
 
-resource "azurerm_service_plan" "lab4" {
-  count               = var.enable_lab4 ? 1 : 0
-  name                = "${var.name_prefix}-lab4-plan"
+resource "azurerm_service_plan" "lab3" {
+  count               = var.enable_lab3 ? 1 : 0
+  name                = "${var.name_prefix}-lab3-plan"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
   os_type             = "Linux"
@@ -362,21 +363,21 @@ resource "azurerm_service_plan" "lab4" {
 
   tags = {
     Project = "JaysWakeZone"
-    Lab     = "4"
+    Lab     = "3"
   }
 }
 
-resource "azurerm_linux_web_app" "lab4" {
-  count               = var.enable_lab4 ? 1 : 0
-  name                = "${var.name_prefix}-lab4-${random_string.lab4[0].result}"
+resource "azurerm_linux_web_app" "lab3" {
+  count               = var.enable_lab3 ? 1 : 0
+  name                = "${var.name_prefix}-lab3-${random_string.lab3[0].result}"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-  service_plan_id     = azurerm_service_plan.lab4[0].id
+  service_plan_id     = azurerm_service_plan.lab3[0].id
   https_only          = true
 
   site_config {
     always_on        = false
-    app_command_line = local.lab4_boot
+    app_command_line = local.lab3_boot
     application_stack {
       docker_image_name   = var.serverless_image
       docker_registry_url = "https://index.docker.io"
@@ -389,23 +390,23 @@ resource "azurerm_linux_web_app" "lab4" {
 
   tags = {
     Project = "JaysWakeZone"
-    Lab     = "4"
+    Lab     = "3"
     Demo    = "serverless-tracer-candidate"
   }
 }
 
-resource "random_string" "lab4" {
-  count   = var.enable_lab4 ? 1 : 0
+resource "random_string" "lab3" {
+  count   = var.enable_lab3 ? 1 : 0
   length  = 4
   special = false
   upper   = false
 }
 
-output "lab4_app_name" {
-  value = var.enable_lab4 ? azurerm_linux_web_app.lab4[0].name : null
+output "lab3_app_name" {
+  value = var.enable_lab3 ? azurerm_linux_web_app.lab3[0].name : null
 }
 
-output "lab4_app_url" {
+output "lab3_app_url" {
   description = "App Service URL — SA installs tracer themselves"
-  value       = var.enable_lab4 ? "https://${azurerm_linux_web_app.lab4[0].default_hostname}" : null
+  value       = var.enable_lab3 ? "https://${azurerm_linux_web_app.lab3[0].default_hostname}" : null
 }

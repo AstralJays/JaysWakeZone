@@ -7,9 +7,9 @@ aws_region = "us-east-1"
 name_prefix = "jayswakezone"
 
 enable_lab1 = true   # two PII buckets
-enable_lab2 = true   # VM + app + Webmin
-enable_lab4 = true   # Lambda
-enable_lab3 = false  # K8s later
+enable_lab2 = true   # VM and Hosts
+enable_lab3 = true   # Lambda
+enable_lab4 = false  # K8s last / later
 
 instance_type  = "t3.large"
 root_volume_gb = 40

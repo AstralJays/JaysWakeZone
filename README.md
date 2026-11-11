@@ -62,7 +62,7 @@ cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply && terraform output
 ```
 
-Defaults ship **Labs 1 + 2 + 4** in that one apply. Lab 3 (K8s) stays off.
+Defaults ship **Labs 1 + 2 + 3** in that one apply. Lab 4 (K8s) stays off.
 
 If you changed Lab 2 app code in your fork, set `repo_url` in tfvars to your fork URL. Otherwise leave the default.
 
@@ -71,15 +71,15 @@ If you changed Lab 2 app code in your fork, set `repo_url` in tfvars to your for
 | Lab | Terraform creates | You do after apply |
 |-----|-------------------|--------------------|
 | **1** Storage | Two public PII stores | CSPM loop: fix one, risk-accept the other |
-| **2** Host | VM + DVWA-lite + Webmin | Install **host eBPF sensor**, run `/labs` attacks |
-| **4** Serverless | Lambda / App Service / Cloud Run | Install **tracer**, hit the URL |
-| **3** K8s | — (later) | Keep `enable_lab3 = false` for now |
+| **2** VM and Hosts | Linux VM + DVWA-lite + Webmin | Install **host eBPF sensor**, run `/labs` attacks |
+| **3** Serverless | Lambda / App Service / Cloud Run | Install **tracer**, hit the URL |
+| **4** Kubernetes | — (later) | Keep `enable_lab4 = false` for now |
 
 ### Useful outputs
 
 - Lab 1: `lab1_remediate_*` · `lab1_exception_*`
 - Lab 2: `lab2_application_url` · `lab2_webmin_url` (`admin` / `password`) · `lab2_public_ip`
-- Lab 4: `lab4_function_url` (AWS) · `lab4_app_url` (Azure) · `lab4_service_url` (GCP)
+- Lab 3: `lab3_function_url` (AWS) · `lab3_app_url` (Azure) · `lab3_service_url` (GCP)
 
 ## Before labs — connect the account
 

@@ -28,7 +28,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 + 4 ship together by default (one terraform apply). Lab 3 (K8s) later.
+# Labs 1 + 2 + 3 ship together by default. Lab 4 (K8s) last / later.
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -41,14 +41,14 @@ variable "enable_lab2" {
 
 variable "enable_lab3" {
   type        = bool
-  default     = false
-  description = "Planned — EKS. Keep false until lab3-kubernetes lands."
+  default     = true
+  description = "Lambda zip + Function URL (no ECR)."
 }
 
 variable "enable_lab4" {
   type        = bool
-  default     = true
-  description = "Lambda zip + Function URL (no ECR)."
+  default     = false
+  description = "Planned — EKS. Keep false until lab4-kubernetes lands."
 }
 
 variable "instance_type" {
@@ -214,7 +214,7 @@ resource "aws_s3_object" "lab1_objects" {
 resource "aws_security_group" "lab2" {
   count       = var.enable_lab2 ? 1 : 0
   name_prefix = "${var.name_prefix}-"
-  description = "JaysWakeZone Lab 2 HTTP + SSH"
+  description = "JaysWakeZone Lab 2 VM and Hosts — HTTP + SSH"
 
   ingress {
     description = "SSH"
@@ -282,6 +282,7 @@ resource "aws_instance" "lab2" {
     Name    = "${var.name_prefix}-lab2"
     Project = "JaysWakeZone"
     Lab     = "2"
+    Track   = "VM-and-Hosts"
   }
 }
 
@@ -324,19 +325,19 @@ output "lab2_public_ip" {
 }
 
 # ---------------------------------------------------------------------------
-# Lab 4 — Lambda zip + Function URL (no ECR / no Docker build)
+# Lab 3 — Lambda zip + Function URL (no ECR / no Docker build)
 # ---------------------------------------------------------------------------
 
-data "archive_file" "lab4" {
-  count       = var.enable_lab4 ? 1 : 0
+data "archive_file" "lab3" {
+  count       = var.enable_lab3 ? 1 : 0
   type        = "zip"
-  source_file = "${path.module}/../../lab4-serverless/lambda/handler.py"
-  output_path = "${path.module}/.build/lab4-lambda.zip"
+  source_file = "${path.module}/../../lab3-serverless/lambda/handler.py"
+  output_path = "${path.module}/.build/lab3-lambda.zip"
 }
 
-resource "aws_iam_role" "lab4" {
-  count = var.enable_lab4 ? 1 : 0
-  name  = "${var.name_prefix}-lab4-lambda"
+resource "aws_iam_role" "lab3" {
+  count = var.enable_lab3 ? 1 : 0
+  name  = "${var.name_prefix}-lab3-lambda"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -349,54 +350,54 @@ resource "aws_iam_role" "lab4" {
 
   tags = {
     Project = "JaysWakeZone"
-    Lab     = "4"
+    Lab     = "3"
   }
 }
 
-resource "aws_iam_role_policy_attachment" "lab4_basic" {
-  count      = var.enable_lab4 ? 1 : 0
-  role       = aws_iam_role.lab4[0].name
+resource "aws_iam_role_policy_attachment" "lab3_basic" {
+  count      = var.enable_lab3 ? 1 : 0
+  role       = aws_iam_role.lab3[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_lambda_function" "lab4" {
-  count            = var.enable_lab4 ? 1 : 0
-  function_name    = "${var.name_prefix}-lab4"
-  role             = aws_iam_role.lab4[0].arn
+resource "aws_lambda_function" "lab3" {
+  count            = var.enable_lab3 ? 1 : 0
+  function_name    = "${var.name_prefix}-lab3"
+  role             = aws_iam_role.lab3[0].arn
   handler          = "handler.handler"
   runtime          = "python3.9"
-  filename         = data.archive_file.lab4[0].output_path
-  source_code_hash = data.archive_file.lab4[0].output_base64sha256
+  filename         = data.archive_file.lab3[0].output_path
+  source_code_hash = data.archive_file.lab3[0].output_base64sha256
   timeout          = 10
   memory_size      = 128
 
   tags = {
     Project = "JaysWakeZone"
-    Lab     = "4"
+    Lab     = "3"
     Demo    = "serverless-tracer-candidate"
   }
 }
 
-resource "aws_lambda_function_url" "lab4" {
-  count              = var.enable_lab4 ? 1 : 0
-  function_name      = aws_lambda_function.lab4[0].function_name
+resource "aws_lambda_function_url" "lab3" {
+  count              = var.enable_lab3 ? 1 : 0
+  function_name      = aws_lambda_function.lab3[0].function_name
   authorization_type = "NONE"
 }
 
-resource "aws_lambda_permission" "lab4_url" {
-  count                  = var.enable_lab4 ? 1 : 0
+resource "aws_lambda_permission" "lab3_url" {
+  count                  = var.enable_lab3 ? 1 : 0
   statement_id           = "FunctionURLAllowPublicAccess"
   action                 = "lambda:InvokeFunctionUrl"
-  function_name          = aws_lambda_function.lab4[0].function_name
+  function_name          = aws_lambda_function.lab3[0].function_name
   principal              = "*"
   function_url_auth_type = "NONE"
 }
 
-output "lab4_function_name" {
-  value = var.enable_lab4 ? aws_lambda_function.lab4[0].function_name : null
+output "lab3_function_name" {
+  value = var.enable_lab3 ? aws_lambda_function.lab3[0].function_name : null
 }
 
-output "lab4_function_url" {
+output "lab3_function_url" {
   description = "Public Lambda Function URL — SA installs tracer themselves"
-  value       = var.enable_lab4 ? aws_lambda_function_url.lab4[0].function_url : null
+  value       = var.enable_lab3 ? aws_lambda_function_url.lab3[0].function_url : null
 }

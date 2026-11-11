@@ -1,4 +1,4 @@
-"""Jay's Wake Zone — SA onboarding DVWA-lite with multiple Function-in-Use CVEs.
+"""Lab 2 — VM and Hosts: DVWA-lite with Function-in-Use CVEs.
 
 See app/fiu.py for the CVE table and heartbeat.
 """

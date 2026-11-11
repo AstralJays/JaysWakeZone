@@ -1,4 +1,4 @@
-# Lab 4 — Serverless
+# Lab 3 — Serverless
 
 Part of the default grab-and-go apply. You do **not** build or push images.
 
@@ -8,4 +8,4 @@ Part of the default grab-and-go apply. You do **not** build or push images.
 | Azure | App Service URL |
 | GCP | Cloud Run URL |
 
-After `terraform apply`, open the Lab 4 output URL and install the Upwind tracer yourself.
+After `terraform apply`, open the Lab 3 output URL and install the Upwind tracer yourself.

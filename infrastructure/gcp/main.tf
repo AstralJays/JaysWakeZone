@@ -33,7 +33,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 + 4 ship together by default (one terraform apply). Lab 3 (K8s) later.
+# Labs 1 + 2 + 3 ship together by default. Lab 4 (K8s) last / later.
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -46,14 +46,14 @@ variable "enable_lab2" {
 
 variable "enable_lab3" {
   type        = bool
-  default     = false
-  description = "Planned — GKE. Keep false until lab3-kubernetes lands."
+  default     = true
+  description = "Cloud Run from public Docker Hub python:3.9-bullseye (no GAR)."
 }
 
 variable "enable_lab4" {
   type        = bool
-  default     = true
-  description = "Cloud Run from public Docker Hub python:3.9-bullseye (no GAR)."
+  default     = false
+  description = "Planned — GKE. Keep false until lab4-kubernetes lands."
 }
 
 variable "serverless_image" {
@@ -206,6 +206,7 @@ resource "google_compute_instance" "lab2" {
   labels = {
     project = "jayswakezone"
     lab     = "2"
+    track   = "vm-and-hosts"
   }
 }
 
@@ -244,11 +245,11 @@ output "lab2_public_ip" {
 }
 
 # ---------------------------------------------------------------------------
-# Lab 4 — Cloud Run from public Docker Hub python:3.9-bullseye (no GAR)
+# Lab 3 — Cloud Run from public Docker Hub python:3.9-bullseye (no GAR)
 # ---------------------------------------------------------------------------
 
 locals {
-  lab4_boot = <<-BOOT
+  lab3_boot = <<-BOOT
     set -e
     pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
     cat >/tmp/jwz_app.py <<'PY'
@@ -256,7 +257,7 @@ locals {
     app = Flask(__name__)
     @app.route("/")
     def index():
-        return {"status": "running", "demo": "cve-detection", "lab": "4-serverless"}
+        return {"status": "running", "demo": "cve-detection", "lab": "3-serverless"}
     @app.route("/health")
     def health():
         return {"ok": True}
@@ -266,9 +267,9 @@ locals {
   BOOT
 }
 
-resource "google_cloud_run_v2_service" "lab4" {
-  count    = var.enable_lab4 ? 1 : 0
-  name     = "${var.name_prefix}-lab4"
+resource "google_cloud_run_v2_service" "lab3" {
+  count    = var.enable_lab3 ? 1 : 0
+  name     = "${var.name_prefix}-lab3"
   location = var.region
   ingress  = "INGRESS_TRAFFIC_ALL"
 
@@ -276,7 +277,7 @@ resource "google_cloud_run_v2_service" "lab4" {
     containers {
       image   = var.serverless_image
       command = ["bash", "-c"]
-      args    = [local.lab4_boot]
+      args    = [local.lab3_boot]
       ports {
         container_port = 8080
       }
@@ -295,24 +296,24 @@ resource "google_cloud_run_v2_service" "lab4" {
 
   labels = {
     project = "jayswakezone"
-    lab     = "4"
+    lab     = "3"
   }
 }
 
-resource "google_cloud_run_v2_service_iam_member" "lab4_public" {
-  count    = var.enable_lab4 ? 1 : 0
+resource "google_cloud_run_v2_service_iam_member" "lab3_public" {
+  count    = var.enable_lab3 ? 1 : 0
   project  = var.project_id
-  location = google_cloud_run_v2_service.lab4[0].location
-  name     = google_cloud_run_v2_service.lab4[0].name
+  location = google_cloud_run_v2_service.lab3[0].location
+  name     = google_cloud_run_v2_service.lab3[0].name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
 
-output "lab4_service_name" {
-  value = var.enable_lab4 ? google_cloud_run_v2_service.lab4[0].name : null
+output "lab3_service_name" {
+  value = var.enable_lab3 ? google_cloud_run_v2_service.lab3[0].name : null
 }
 
-output "lab4_service_url" {
+output "lab3_service_url" {
   description = "Cloud Run URL — SA installs tracer themselves"
-  value       = var.enable_lab4 ? google_cloud_run_v2_service.lab4[0].uri : null
+  value       = var.enable_lab3 ? google_cloud_run_v2_service.lab3[0].uri : null
 }
