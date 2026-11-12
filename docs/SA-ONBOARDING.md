@@ -31,14 +31,16 @@ terraform destroy
 
 No image build — pulls `bkimminich/juice-shop` from Docker Hub.
 
-## Lab 5 — Kubernetes
+## Lab 5 — Kubernetes (Damn Vulnerable AI Agent)
 
 ```bash
 cd infrastructure/<cloud>/lab5-kubernetes
 terraform init && apply
-# lab5_url → install cluster sensor
+# lab5_url → DVAA dashboard → install cluster sensor
 terraform destroy   # do not leave up
 ```
+
+No image build — pulls `opena2a/dvaa:0.9.2` from Docker Hub. Lab/sandbox only.
 
 ## Outputs
 
