@@ -1,9 +1,10 @@
-# Azure stack 2/3 — Managed containers (Azure Container Apps)
-
-**Independent** of `../labs-1-3` and `../kubernetes`.  
-**Status:** planned — not ready to apply.
+# Azure stack 2/3 — Container Apps (Lab 4)
 
 ```bash
 cd infrastructure/azure/containers
-terraform init && terraform apply   # when implemented
+cp terraform.tfvars.example terraform.tfvars
+terraform init && terraform apply
+terraform output lab4_url
 ```
+
+Public Docker Hub image, min replicas 0. Destroy when finished. Install tracer yourself.

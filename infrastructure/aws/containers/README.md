@@ -1,15 +1,11 @@
-# AWS stack 2/3 — Managed containers (ECS Fargate)
-
-**Independent** Terraform root from `../labs-1-3` and `../kubernetes`.  
-**Status:** planned — not ready to apply (keeps day-1 spend low).
-
-When ready:
+# AWS stack 2/3 — ECS Fargate (Lab 4)
 
 ```bash
 cd infrastructure/aws/containers
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply
+terraform output lab4_url
 ```
 
-Target: ECS Fargate + public image (no ECR push). SA installs tracer themselves.  
-Destroy with `terraform destroy` in **this** directory only.
+Public `python:3.9-bullseye` + boot script (no ECR). Uses **default VPC** (no NAT).  
+**ALB has hourly cost** — `terraform destroy` when finished. Install Upwind tracer yourself.

@@ -15,79 +15,61 @@
 
 > [!CAUTION]
 > **Intentionally vulnerable — do not use in production.**  
-> Sandbox accounts only. Destroy each stack when finished.
+> Sandbox accounts only. Destroy each stack when finished — especially Kubernetes.
 
-## Three independent Terraform stacks (per cloud)
+## Three independent stacks (per cloud)
 
-Pick **one** cloud. Each folder is its **own** state — apply / destroy separately (cost control).
-
-| Stack | Path | What’s in it | When |
-|-------|------|--------------|------|
-| **1 — Labs 1–3** | `infrastructure/<cloud>/labs-1-3/` | Storage · VM and Hosts · Serverless | Onboarding day |
-| **2 — Containers** | `infrastructure/<cloud>/containers/` | ECS Fargate \| Azure Container Apps | Later track |
-| **3 — Kubernetes** | `infrastructure/<cloud>/kubernetes/` | EKS \| AKS \| GKE | Last / most expensive |
+| Stack | Path | Apps / platforms | Cost |
+|-------|------|------------------|------|
+| **1 — Labs 1–3** | `…/labs-1-3/` | Storage · VM and Hosts · Serverless | Day-1 default |
+| **2 — Containers** | `…/containers/` | ECS Fargate \| ACA \| Cloud Run | Opt-in (ALB on AWS) |
+| **3 — Kubernetes** | `…/kubernetes/` | EKS \| AKS \| GKE + Flask workload | Last — destroy ASAP |
 
 ```text
-infrastructure/
-  aws|azure|gcp/
-    labs-1-3/      ← day-1 grab-and-go
-    containers/    ← planned (independent apply)
-    kubernetes/    ← planned (independent apply)
+infrastructure/<aws|azure|gcp>/
+  labs-1-3/     ← onboarding day
+  containers/   ← Lab 4 apps live
+  kubernetes/   ← Lab 5 apps live
 ```
 
-## Grab and go (stack 1 only)
-
-```text
-1. Fork AstralJays/JaysWakeZone
-2. Clone your fork
-3. Pick one cloud
-4. cd infrastructure/<cloud>/labs-1-3
-5. terraform init && terraform apply && terraform output
-6. Install sensors/tracers in Upwind
-7. terraform destroy   # this stack only
-```
-
-### AWS
+## Grab and go (stack 1)
 
 ```bash
-cd infrastructure/aws/labs-1-3
+git clone https://github.com/<YOU>/JaysWakeZone.git
+cd JaysWakeZone/infrastructure/aws/labs-1-3   # or azure|gcp
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply && terraform output
 ```
 
-### Azure
+Azure: set `ssh_public_key`. GCP: set `project_id`.
+
+## What’s deployed
+
+| Lab | App | Stack |
+|-----|-----|-------|
+| **1** Storage | Two public PII stores (`lab1-public-data/`) | 1 |
+| **2** VM and Hosts | DVWA-lite + Webmin (`lab2-wakezone-app/`) | 1 |
+| **3** Serverless | Lambda zip / App Service / Cloud Run (`lab3-serverless/`) | 1 |
+| **4** Containers | Flask on `python:3.9-bullseye` (`lab4-containers/`) | 2 |
+| **5** Kubernetes | Same Flask via Deployment+LB (`lab5-kubernetes/`) | 3 |
+
+All container workloads pull **public Docker Hub** — no ECR/ACR/GAR push.
+
+### Stack 2 / 3
 
 ```bash
-cd infrastructure/azure/labs-1-3
+cd infrastructure/<cloud>/containers   # or kubernetes
 cp terraform.tfvars.example terraform.tfvars
-# set ssh_public_key
-terraform init && terraform apply && terraform output
+terraform init && terraform apply
+terraform output   # lab4_url or lab5_url
 ```
-
-### GCP
-
-```bash
-cd infrastructure/gcp/labs-1-3
-cp terraform.tfvars.example terraform.tfvars
-# set project_id
-terraform init && terraform apply && terraform output
-```
-
-## Labs in stack 1
-
-| Lab | Creates | You do after apply |
-|-----|---------|--------------------|
-| **1** Storage | Two public PII stores | CSPM: fix one, risk-accept the other |
-| **2** VM and Hosts | Linux VM + DVWA-lite + Webmin | Host eBPF sensor + `/labs` attacks |
-| **3** Serverless | Lambda / App Service / Cloud Run | Tracer + hit URL |
-
-Outputs: `lab1_*` · `lab2_*` · `lab3_*`
 
 ## Cost hygiene
 
-- Day-1 = **stack 1 only**. Leave `containers/` and `kubernetes/` alone until needed.
-- Destroy stack 1 before (or instead of) standing up stack 2/3 if you are spend-sensitive.
-- Each stack destroys independently — no shared enable flags.
+- Onboarding = **stack 1 only**.
+- Stack 2 AWS includes an ALB (hourly) — destroy when done.
+- Stack 3 pays for control plane + node — never leave overnight without intent.
+- Each stack has its own state → destroy independently.
 
 ## Before labs
 

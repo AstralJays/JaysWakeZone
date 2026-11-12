@@ -1,4 +1,10 @@
-# Azure stack 3/3 — Kubernetes (AKS)
+# Azure stack 3/3 — AKS (Lab 5)
 
-**Independent** of `../labs-1-3` and `../containers`.  
-**Status:** planned — last / most expensive. Destroy promptly when idle.
+```bash
+cd infrastructure/azure/kubernetes
+cp terraform.tfvars.example terraform.tfvars
+terraform init && terraform apply
+terraform output
+```
+
+**Destroy promptly.** Install Upwind cluster sensor yourself.

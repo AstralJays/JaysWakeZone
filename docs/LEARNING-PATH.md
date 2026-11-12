@@ -1,30 +1,25 @@
 # JaysWakeZone ↔ SA Surf School
 
-**Flow:** fork → clone → apply **stack 1** → install sensors/tracers.  
-Later tracks = **separate** Terraform roots (containers, then Kubernetes).
+Three **independent** Terraform stacks per cloud. Apps are wired for all five labs.
 
-## Three stacks per cloud
+| Stack | Dir | Labs | Platforms |
+|-------|-----|------|-----------|
+| 1 | `labs-1-3/` | 1 Storage · 2 VM and Hosts · 3 Serverless | S3/Blob/GCS · EC2/Azure VM/GCE · Lambda/App Service/Cloud Run |
+| 2 | `containers/` | 4 Managed containers | ECS Fargate · ACA · Cloud Run |
+| 3 | `kubernetes/` | 5 Kubernetes | EKS · AKS · GKE |
 
-| # | Directory | Content | Cost posture |
-|---|-----------|---------|--------------|
-| 1 | `infrastructure/<cloud>/labs-1-3/` | Lab 1 Storage · Lab 2 VM and Hosts · Lab 3 Serverless | Onboarding default |
-| 2 | `infrastructure/<cloud>/containers/` | ECS Fargate \| ACA | Opt-in later |
-| 3 | `infrastructure/<cloud>/kubernetes/` | EKS \| AKS \| GKE | Last / destroy promptly |
+## Apps
 
-Independent state → independent `apply` / `destroy`.
+| Lab | Code |
+|-----|------|
+| 1 | `lab1-public-data/` |
+| 2 | `lab2-wakezone-app/` |
+| 3 | `lab3-serverless/` |
+| 4 | `lab4-containers/` (Flask on public bullseye) |
+| 5 | `lab5-kubernetes/` (+ `manifests/`) |
 
-## Before apply — connect the account
+SA installs sensors/tracers — never baked into Terraform.
 
-CSPM · agentless · DSPM · activity logs / CDR.
+## Cost
 
-## Stack 1 labs
-
-| Lab | Created | You install |
-|-----|---------|-------------|
-| **1** Storage | Two public PII stores | — |
-| **2** VM and Hosts | VM + DVWA-lite + Webmin | Host eBPF sensor |
-| **3** Serverless | Lambda / App Service / Cloud Run | Tracer |
-
-## Hygiene
-
-One cloud. Prefer stack 1 only for onboarding day. Never leave stack 3 up overnight without a reason.
+Day-1 = stack 1. Stacks 2–3 opt-in; destroy K8s promptly.

@@ -1,4 +1,11 @@
-# GCP stack 3/3 — Kubernetes (GKE)
+# GCP stack 3/3 — GKE (Lab 5)
 
-**Independent** of `../labs-1-3` and `../containers`.  
-**Status:** planned — last / most expensive. Destroy promptly when idle.
+```bash
+cd infrastructure/gcp/kubernetes
+cp terraform.tfvars.example terraform.tfvars
+# set project_id
+terraform init && terraform apply
+terraform output
+```
+
+**Destroy promptly.** Install Upwind cluster sensor yourself.

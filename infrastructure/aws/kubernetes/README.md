@@ -1,14 +1,11 @@
-# AWS stack 3/3 — Kubernetes (EKS)
-
-**Independent** Terraform root from `../labs-1-3` and `../containers`.  
-**Status:** planned — last / most expensive. Keep destroyed when idle.
-
-When ready:
+# AWS stack 3/3 — EKS (Lab 5)
 
 ```bash
 cd infrastructure/aws/kubernetes
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply
+terraform output
 ```
 
-SA installs cluster/node sensor themselves. Destroy in **this** directory only.
+Deploys Flask CVE demo (public `python:3.9-bullseye`) behind a LoadBalancer Service.  
+**Destroy promptly.** Install the Upwind cluster/node sensor yourself.

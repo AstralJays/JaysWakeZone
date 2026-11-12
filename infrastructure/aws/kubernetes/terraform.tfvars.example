@@ -1,2 +1,3 @@
-# Stack 3/3 — kubernetes (planned). Not ready to apply yet.
+# Stack 3/3 — EKS. Control plane + 1 node — destroy when done.
+aws_region  = "us-east-1"
 name_prefix = "jayswakezone"

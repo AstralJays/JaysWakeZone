@@ -1,42 +1,37 @@
 # SA Onboarding — facilitator runbook
 
-**Grab and go:** fork → clone → apply **stack 1** (`labs-1-3`) → SA installs sensors.  
-Stacks 2–3 are separate deploys — leave them until that track.
-
-## SA checklist (onboarding day)
-
-1. Fork [AstralJays/JaysWakeZone](https://github.com/AstralJays/JaysWakeZone)
-2. Clone **their** fork
-3. Connect sandbox cloud in Upwind
-4. `cd infrastructure/<aws|azure|gcp>/labs-1-3`
-5. Copy tfvars → `terraform init && apply && output`
-6. Lab 1 → Lab 2 VM and Hosts → Lab 3 tracer
-7. `terraform destroy` **in labs-1-3 only**
-
-## tfvars
-
-| Cloud | Required in `labs-1-3` |
-|-------|------------------------|
-| AWS | Usually nothing |
-| Azure | `ssh_public_key` |
-| GCP | `project_id` |
-
-## Later tracks (separate applies)
+## Day-1 (stack 1)
 
 ```bash
-# Stack 2 — when ready
-cd infrastructure/<cloud>/containers
-terraform init && terraform apply
-
-# Stack 3 — last / expensive
-cd infrastructure/<cloud>/kubernetes
-terraform init && terraform apply
+cd infrastructure/<aws|azure|gcp>/labs-1-3
+cp terraform.tfvars.example terraform.tfvars
+terraform init && apply && output
+# Lab 1 CSPM → Lab 2 host sensor → Lab 3 tracer
+terraform destroy
 ```
 
-Destroy each stack from its own directory.
+## Later — containers (stack 2)
 
-## Outputs (stack 1)
+```bash
+cd infrastructure/<cloud>/containers
+terraform init && apply
+# output lab4_url → install tracer
+terraform destroy
+```
 
-- Lab 1: `lab1_remediate_*` / `lab1_exception_*`
-- Lab 2: `lab2_application_url`, `lab2_webmin_url` (`admin` / `password`), `lab2_public_ip`
-- Lab 3: `lab3_function_url` \| `lab3_app_url` \| `lab3_service_url`
+## Later — Kubernetes (stack 3)
+
+```bash
+cd infrastructure/<cloud>/kubernetes
+terraform init && apply
+# output lab5_url → install cluster sensor
+terraform destroy   # do not leave up
+```
+
+## Outputs
+
+| Stack | Key outputs |
+|-------|-------------|
+| 1 | `lab1_*` · `lab2_*` · `lab3_*` |
+| 2 | `lab4_url` |
+| 3 | `lab5_url` · cluster name / kubeconfig hint |

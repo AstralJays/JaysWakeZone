@@ -1,3 +1,2 @@
-# Stack 3/3 — kubernetes (planned).
-name_prefix = "jayswakezone"
 location    = "eastus"
+name_prefix = "jayswakezone"

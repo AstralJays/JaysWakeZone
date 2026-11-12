@@ -1,8 +1,12 @@
-# Lab 5 — Kubernetes
+# Lab 5 — Kubernetes (app + manifests)
 
-Terraform lives in **independent stack 3**:
+Workload: same Flask CVE demo on public `python:3.9-bullseye`.
 
-`infrastructure/<aws|azure|gcp>/kubernetes/`
+| Cloud | Stack path | Platform |
+|-------|------------|----------|
+| AWS | `infrastructure/aws/kubernetes/` | EKS (1× managed node) |
+| Azure | `infrastructure/azure/kubernetes/` | AKS (1× small node) |
+| GCP | `infrastructure/gcp/kubernetes/` | GKE (1× small node) |
 
-Not part of the Labs 1–3 apply. Planned: EKS \| AKS \| GKE.  
-Last / most expensive — destroy promptly.
+Reference manifests: `manifests/deployment.yaml`.  
+**Destroy promptly** — control plane + node hours add up. SA installs cluster sensor themselves.

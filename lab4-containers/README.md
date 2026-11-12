@@ -1,8 +1,12 @@
-# Lab 4 — Managed containers
+# Lab 4 — Managed containers (app)
 
-Terraform lives in **independent stack 2**:
+Demo workload: public `python:3.9-bullseye` + Flask 2.0.3 (agentless CVE candidate).  
+**No image build/push** — Terraform bootstraps at start.
 
-`infrastructure/<aws|azure|gcp>/containers/`
+| Cloud | Stack path | Platform |
+|-------|------------|----------|
+| AWS | `infrastructure/aws/containers/` | ECS Fargate + ALB |
+| Azure | `infrastructure/azure/containers/` | Azure Container Apps |
+| GCP | `infrastructure/gcp/containers/` | Cloud Run (containers track) |
 
-Not part of the Labs 1–3 apply. Planned: ECS Fargate \| Azure Container Apps.  
-See stack README in that folder.
+SA installs the tracer after apply. Destroy this stack when done.

@@ -1,6 +1,11 @@
-# GCP stack 2/3 — Managed containers
+# GCP stack 2/3 — Cloud Run containers track (Lab 4)
 
-**Independent** of `../labs-1-3` and `../kubernetes`.  
-**Status:** planned / optional — Lab 3 Cloud Run already covers a lot for GCP.
+Separate from `labs-1-3` Lab 3 serverless service (`-lab3` vs `-lab4`).
 
-When implemented, apply only this root; destroy independently.
+```bash
+cd infrastructure/gcp/containers
+cp terraform.tfvars.example terraform.tfvars
+# set project_id
+terraform init && terraform apply
+terraform output lab4_url
+```
