@@ -1,38 +1,30 @@
 # JaysWakeZone ↔ SA Surf School
 
-**Flow:** fork → clone → `terraform apply` → install sensors/tracers in Upwind.  
-No container image builds or registry work for the SA.
+**Flow:** fork → clone → apply **stack 1** → install sensors/tracers.  
+Later tracks = **separate** Terraform roots (containers, then Kubernetes).
+
+## Three stacks per cloud
+
+| # | Directory | Content | Cost posture |
+|---|-----------|---------|--------------|
+| 1 | `infrastructure/<cloud>/labs-1-3/` | Lab 1 Storage · Lab 2 VM and Hosts · Lab 3 Serverless | Onboarding default |
+| 2 | `infrastructure/<cloud>/containers/` | ECS Fargate \| ACA | Opt-in later |
+| 3 | `infrastructure/<cloud>/kubernetes/` | EKS \| AKS \| GKE | Last / destroy promptly |
+
+Independent state → independent `apply` / `destroy`.
 
 ## Before apply — connect the account
 
-| Capability | SA enables in Upwind |
-|------------|----------------------|
-| **CSPM** | Misconfigurations |
-| **Agentless** | Package / image inventory |
-| **DSPM** | Sensitive data on object storage |
-| **CDR / activity logs** | CloudTrail · Activity · Audit Logs |
+CSPM · agentless · DSPM · activity logs / CDR.
 
-## Lab map (cost-minded)
+## Stack 1 labs
 
-**Onboarding day:** Labs **1 + 2 + 3** only.  
-**Later tracks:** Lab **4** managed containers, Lab **5** Kubernetes — both **off** by default.
-
-| Lab | Created for you | You install | Default |
-|-----|-----------------|-------------|---------|
-| **1** Storage | Two public PII stores | — | on |
-| **2** VM and Hosts | Linux VM + DVWA-lite + Webmin | Host eBPF sensor | on |
-| **3** Serverless | Lambda / App Service / Cloud Run | Tracer | on |
-| **4** Managed containers | ECS Fargate \| Azure Container Apps | Tracer | **off** |
-| **5** Kubernetes | EKS \| AKS \| GKE | Cluster sensor | **off** |
-
-## Lab notes
-
-**Lab 1** — `remediate` store = fix; `exception` store = whitelist / accept risk.  
-**Lab 2 — VM and Hosts** — baseline L3/L4/L7, then `/labs` + Webmin (`admin`/`password`).  
-**Lab 3** — hit URL; install tracer. No image push.  
-**Lab 4** — container platforms without full K8s tax; enable only when needed.  
-**Lab 5** — last / most expensive; destroy promptly.
+| Lab | Created | You install |
+|-----|---------|-------------|
+| **1** Storage | Two public PII stores | — |
+| **2** VM and Hosts | VM + DVWA-lite + Webmin | Host eBPF sensor |
+| **3** Serverless | Lambda / App Service / Cloud Run | Tracer |
 
 ## Hygiene
 
-One cloud per SA. `terraform destroy` when done. Never leave Lab 5 up overnight without a reason.
+One cloud. Prefer stack 1 only for onboarding day. Never leave stack 3 up overnight without a reason.

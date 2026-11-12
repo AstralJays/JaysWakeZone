@@ -1,0 +1,9 @@
+# Stack 1/3 — Labs 1–3 only. Independent of ../containers and ../kubernetes.
+
+project_id  = "YOUR_GCP_PROJECT"
+region      = "us-central1"
+zone        = "us-central1-a"
+name_prefix = "jayswakezone"
+
+repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
+repo_ref = "main"

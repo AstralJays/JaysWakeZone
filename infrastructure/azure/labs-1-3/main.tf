@@ -1,3 +1,6 @@
+# Stack 1 of 3 — Labs 1–3 (Storage + VM and Hosts + Serverless)
+# Independent of containers/ and kubernetes/. Destroy this stack without touching those.
+
 terraform {
   required_version = ">= 1.5.0"
   required_providers {
@@ -26,35 +29,6 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 + 3 = onboarding day (cost-minded). Lab 4/5 opt-in later.
-variable "enable_lab1" {
-  type    = bool
-  default = true
-}
-
-variable "enable_lab2" {
-  type    = bool
-  default = true
-}
-
-variable "enable_lab3" {
-  type        = bool
-  default     = true
-  description = "App Service from public Docker Hub python:3.9-bullseye (no ACR)."
-}
-
-variable "enable_lab4" {
-  type        = bool
-  default     = false
-  description = "Planned — Azure Container Apps. Keep false until lab4-containers lands (cost)."
-}
-
-variable "enable_lab5" {
-  type        = bool
-  default     = false
-  description = "Planned — AKS. Keep false until lab5-kubernetes lands (cost)."
-}
-
 variable "serverless_image" {
   type        = string
   default     = "python:3.9-bullseye"
@@ -68,8 +42,7 @@ variable "admin_username" {
 
 variable "ssh_public_key" {
   type        = string
-  default     = ""
-  description = "SSH public key for Lab 2 VM and Hosts (required when enable_lab2=true)"
+  description = "SSH public key for Lab 2 VM and Hosts"
 }
 
 variable "repo_url" {
@@ -83,7 +56,7 @@ variable "repo_ref" {
 }
 
 locals {
-  data_dir = "${path.module}/../../lab1-public-data"
+  data_dir = "${path.module}/../../../lab1-public-data"
   lab1_objects = {
     "exports/name-ssn-ccn.csv"   = { file = "name-ssn-ccn.csv", content_type = "text/csv" }
     "exports/name-ssn-dob.csv"   = { file = "name-ssn-dob.csv", content_type = "text/csv" }
@@ -91,11 +64,10 @@ locals {
     "exports/name-dob-email.csv" = { file = "name-dob-email.csv", content_type = "text/csv" }
     "exports/customers.json"     = { file = "customers.json", content_type = "application/json" }
   }
-  # Two storage accounts = full CSPM loop without re-breaking.
-  lab1_stores = var.enable_lab1 ? {
+  lab1_stores = {
     remediate = { short = "rem", cspm_loop = "remediate" }
     exception = { short = "exc", cspm_loop = "risk-accept" }
-  } : {}
+  }
   lab1_object_keys = {
     for pair in setproduct(keys(local.lab1_stores), keys(local.lab1_objects)) :
     "${pair[0]}|${pair[1]}" => {
@@ -105,18 +77,45 @@ locals {
       content_type = local.lab1_objects[pair[1]].content_type
     }
   }
-  needs_network = var.enable_lab2
+  cloud_init = <<-EOF
+    #cloud-config
+    package_update: true
+    packages: [git, curl, ca-certificates]
+    runcmd:
+      - export REPO_URL='${var.repo_url}'
+      - export REPO_REF='${var.repo_ref}'
+      - git clone --depth 1 --branch "${var.repo_ref}" "${var.repo_url}" /tmp/jwz
+      - chmod +x /tmp/jwz/scripts/install-app.sh
+      - /tmp/jwz/scripts/install-app.sh
+  EOF
+  lab3_boot  = <<-BOOT
+    set -e
+    pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
+    cat >/tmp/jwz_app.py <<'PY'
+    from flask import Flask
+    app = Flask(__name__)
+    @app.route("/")
+    def index():
+        return {"status": "running", "demo": "cve-detection", "lab": "3-serverless"}
+    @app.route("/health")
+    def health():
+        return {"ok": True}
+    app.run(host="0.0.0.0", port=8080)
+    PY
+    exec python /tmp/jwz_app.py
+  BOOT
 }
 
 resource "azurerm_resource_group" "main" {
   name     = "${var.name_prefix}-rg"
   location = var.location
-  tags     = { Project = "JaysWakeZone" }
+  tags = {
+    Project = "JaysWakeZone"
+    Stack   = "labs-1-3"
+  }
 }
 
-# ---------------------------------------------------------------------------
-# Lab 1 — two public Blob stores + synthetic PII (remediate + risk-accept)
-# ---------------------------------------------------------------------------
+# --- Lab 1 ---
 
 resource "random_string" "suffix" {
   for_each = local.lab1_stores
@@ -136,6 +135,7 @@ resource "azurerm_storage_account" "lab1" {
 
   tags = {
     Project     = "JaysWakeZone"
+    Stack       = "labs-1-3"
     Lab         = "1"
     CspmLoop    = each.value.cspm_loop
     DemoFinding = "public-blob-container"
@@ -151,8 +151,7 @@ resource "azurerm_storage_container" "lab1" {
 }
 
 resource "azurerm_storage_blob" "lab1_objects" {
-  for_each = local.lab1_object_keys
-
+  for_each               = local.lab1_object_keys
   name                   = trimprefix(each.value.object_key, "exports/")
   storage_account_name   = azurerm_storage_account.lab1[each.value.store_key].name
   storage_container_name = azurerm_storage_container.lab1[each.value.store_key].name
@@ -161,12 +160,9 @@ resource "azurerm_storage_blob" "lab1_objects" {
   content_type           = each.value.content_type
 }
 
-# ---------------------------------------------------------------------------
-# Lab 2 — DVWA-lite on Azure VM (Docker)
-# ---------------------------------------------------------------------------
+# --- Lab 2 — VM and Hosts ---
 
 resource "azurerm_virtual_network" "main" {
-  count               = local.needs_network ? 1 : 0
   name                = "${var.name_prefix}-vnet"
   address_space       = ["10.40.0.0/16"]
   location            = azurerm_resource_group.main.location
@@ -174,15 +170,13 @@ resource "azurerm_virtual_network" "main" {
 }
 
 resource "azurerm_subnet" "main" {
-  count                = local.needs_network ? 1 : 0
   name                 = "default"
   resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main[0].name
+  virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.40.1.0/24"]
 }
 
 resource "azurerm_public_ip" "lab2" {
-  count               = var.enable_lab2 ? 1 : 0
   name                = "${var.name_prefix}-pip"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
@@ -191,7 +185,6 @@ resource "azurerm_public_ip" "lab2" {
 }
 
 resource "azurerm_network_security_group" "lab2" {
-  count               = var.enable_lab2 ? 1 : 0
   name                = "${var.name_prefix}-nsg"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
@@ -234,47 +227,30 @@ resource "azurerm_network_security_group" "lab2" {
 }
 
 resource "azurerm_network_interface" "lab2" {
-  count               = var.enable_lab2 ? 1 : 0
   name                = "${var.name_prefix}-nic"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.main[0].id
+    subnet_id                     = azurerm_subnet.main.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.lab2[0].id
+    public_ip_address_id          = azurerm_public_ip.lab2.id
   }
 }
 
 resource "azurerm_network_interface_security_group_association" "lab2" {
-  count                     = var.enable_lab2 ? 1 : 0
-  network_interface_id      = azurerm_network_interface.lab2[0].id
-  network_security_group_id = azurerm_network_security_group.lab2[0].id
-}
-
-locals {
-  cloud_init = <<-EOF
-    #cloud-config
-    package_update: true
-    packages: [git, curl, ca-certificates]
-    runcmd:
-      - export REPO_URL='${var.repo_url}'
-      - export REPO_REF='${var.repo_ref}'
-      - git clone --depth 1 --branch "${var.repo_ref}" "${var.repo_url}" /tmp/jwz
-      - chmod +x /tmp/jwz/scripts/install-app.sh
-      - /tmp/jwz/scripts/install-app.sh
-  EOF
+  network_interface_id      = azurerm_network_interface.lab2.id
+  network_security_group_id = azurerm_network_security_group.lab2.id
 }
 
 resource "azurerm_linux_virtual_machine" "lab2" {
-  count                 = var.enable_lab2 ? 1 : 0
   name                  = "${var.name_prefix}-vm"
   resource_group_name   = azurerm_resource_group.main.name
   location              = azurerm_resource_group.main.location
   size                  = "Standard_D2s_v5"
   admin_username        = var.admin_username
-  network_interface_ids = [azurerm_network_interface.lab2[0].id]
+  network_interface_ids = [azurerm_network_interface.lab2.id]
   custom_data           = base64encode(local.cloud_init)
 
   admin_ssh_key {
@@ -297,70 +273,21 @@ resource "azurerm_linux_virtual_machine" "lab2" {
 
   tags = {
     Project = "JaysWakeZone"
+    Stack   = "labs-1-3"
     Lab     = "2"
     Track   = "VM-and-Hosts"
   }
 }
 
-output "lab1_remediate_storage_account" {
-  description = "Fix this one (make private → reassess clear)"
-  value       = var.enable_lab1 ? azurerm_storage_account.lab1["remediate"].name : null
-}
+# --- Lab 3 — App Service ---
 
-output "lab1_remediate_url" {
-  value = var.enable_lab1 ? "https://${azurerm_storage_account.lab1["remediate"].name}.blob.core.windows.net/exports/customers.json" : null
-}
-
-output "lab1_exception_storage_account" {
-  description = "Leave public; whitelist / accept risk"
-  value       = var.enable_lab1 ? azurerm_storage_account.lab1["exception"].name : null
-}
-
-output "lab1_exception_url" {
-  value = var.enable_lab1 ? "https://${azurerm_storage_account.lab1["exception"].name}.blob.core.windows.net/exports/customers.json" : null
-}
-
-output "lab2_application_url" {
-  value = var.enable_lab2 ? "http://${azurerm_public_ip.lab2[0].ip_address}:8080/labs" : null
-}
-
-output "lab2_webmin_url" {
-  value = var.enable_lab2 ? "https://${azurerm_public_ip.lab2[0].ip_address}:10000" : null
-}
-
-output "lab2_webmin_credentials" {
-  value = var.enable_lab2 ? "admin / password" : null
-}
-
-output "lab2_public_ip" {
-  value = var.enable_lab2 ? azurerm_public_ip.lab2[0].ip_address : null
-}
-
-# ---------------------------------------------------------------------------
-# Lab 3 — App Service from public Docker Hub python:3.9-bullseye (no ACR)
-# ---------------------------------------------------------------------------
-
-locals {
-  lab3_boot = <<-BOOT
-    set -e
-    pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
-    cat >/tmp/jwz_app.py <<'PY'
-    from flask import Flask
-    app = Flask(__name__)
-    @app.route("/")
-    def index():
-        return {"status": "running", "demo": "cve-detection", "lab": "3-serverless"}
-    @app.route("/health")
-    def health():
-        return {"ok": True}
-    app.run(host="0.0.0.0", port=8080)
-    PY
-    exec python /tmp/jwz_app.py
-  BOOT
+resource "random_string" "lab3" {
+  length  = 4
+  special = false
+  upper   = false
 }
 
 resource "azurerm_service_plan" "lab3" {
-  count               = var.enable_lab3 ? 1 : 0
   name                = "${var.name_prefix}-lab3-plan"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
@@ -369,16 +296,16 @@ resource "azurerm_service_plan" "lab3" {
 
   tags = {
     Project = "JaysWakeZone"
+    Stack   = "labs-1-3"
     Lab     = "3"
   }
 }
 
 resource "azurerm_linux_web_app" "lab3" {
-  count               = var.enable_lab3 ? 1 : 0
-  name                = "${var.name_prefix}-lab3-${random_string.lab3[0].result}"
+  name                = "${var.name_prefix}-lab3-${random_string.lab3.result}"
   resource_group_name = azurerm_resource_group.main.name
   location            = azurerm_resource_group.main.location
-  service_plan_id     = azurerm_service_plan.lab3[0].id
+  service_plan_id     = azurerm_service_plan.lab3.id
   https_only          = true
 
   site_config {
@@ -396,23 +323,51 @@ resource "azurerm_linux_web_app" "lab3" {
 
   tags = {
     Project = "JaysWakeZone"
+    Stack   = "labs-1-3"
     Lab     = "3"
     Demo    = "serverless-tracer-candidate"
   }
 }
 
-resource "random_string" "lab3" {
-  count   = var.enable_lab3 ? 1 : 0
-  length  = 4
-  special = false
-  upper   = false
+output "lab1_remediate_storage_account" {
+  description = "Fix this one (make private → reassess clear)"
+  value       = azurerm_storage_account.lab1["remediate"].name
+}
+
+output "lab1_remediate_url" {
+  value = "https://${azurerm_storage_account.lab1["remediate"].name}.blob.core.windows.net/exports/customers.json"
+}
+
+output "lab1_exception_storage_account" {
+  description = "Leave public; whitelist / accept risk"
+  value       = azurerm_storage_account.lab1["exception"].name
+}
+
+output "lab1_exception_url" {
+  value = "https://${azurerm_storage_account.lab1["exception"].name}.blob.core.windows.net/exports/customers.json"
+}
+
+output "lab2_application_url" {
+  value = "http://${azurerm_public_ip.lab2.ip_address}:8080/labs"
+}
+
+output "lab2_webmin_url" {
+  value = "https://${azurerm_public_ip.lab2.ip_address}:10000"
+}
+
+output "lab2_webmin_credentials" {
+  value = "admin / password"
+}
+
+output "lab2_public_ip" {
+  value = azurerm_public_ip.lab2.ip_address
 }
 
 output "lab3_app_name" {
-  value = var.enable_lab3 ? azurerm_linux_web_app.lab3[0].name : null
+  value = azurerm_linux_web_app.lab3.name
 }
 
 output "lab3_app_url" {
   description = "App Service URL — SA installs tracer themselves"
-  value       = var.enable_lab3 ? "https://${azurerm_linux_web_app.lab3[0].default_hostname}" : null
+  value       = "https://${azurerm_linux_web_app.lab3.default_hostname}"
 }

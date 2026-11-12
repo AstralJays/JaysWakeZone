@@ -1,0 +1,3 @@
+# Stack 2/3 — containers (planned).
+project_id  = "YOUR_GCP_PROJECT"
+name_prefix = "jayswakezone"

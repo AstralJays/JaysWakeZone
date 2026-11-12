@@ -1,15 +1,8 @@
-# Lab 4 — Managed containers (planned)
+# Lab 4 — Managed containers
 
-**Status:** stub — `enable_lab4 = false` by default (cost).  
-Comes **after** Labs 1–3 onboarding day; **before** Kubernetes.
+Terraform lives in **independent stack 2**:
 
-| Cloud | Target | Notes |
-|-------|--------|--------|
-| AWS | **ECS Fargate** | Tracer path; no cluster nodes to babysit |
-| Azure | **Azure Container Apps** | Same idea as Fargate/ACA |
-| GCP | Optional / thin | Cloud Run already covers a lot in Lab 3 |
+`infrastructure/<aws|azure|gcp>/containers/`
 
-**SA owns:** tracer / container instrumentation (not in Terraform).  
-**Wake Zone will provide:** public-image workload (no ECR/ACR/GAR push for the SA), scale-to-zero where the platform allows.
-
-Keep this off unless you are on the containers track. Prefer destroying Labs 1–3 first if you are cost-sensitive.
+Not part of the Labs 1–3 apply. Planned: ECS Fargate \| Azure Container Apps.  
+See stack README in that folder.

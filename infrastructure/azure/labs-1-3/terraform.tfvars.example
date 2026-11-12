@@ -1,0 +1,11 @@
+# Stack 1/3 — Labs 1–3 only. Independent of ../containers and ../kubernetes.
+
+location    = "eastus"
+name_prefix = "jayswakezone"
+
+admin_username = "azureuser"
+# Required:
+# ssh_public_key = "ssh-rsa AAAA..."
+
+repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
+repo_ref = "main"

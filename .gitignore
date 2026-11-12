@@ -6,6 +6,8 @@
 .terraform/
 .terraform.lock.hcl
 infrastructure/**/.build/
+infrastructure/**/.terraform/
+infrastructure/**/terraform.tfvars
 crash.log
 override.tf
 override.tf.json

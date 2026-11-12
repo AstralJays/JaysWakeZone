@@ -1,14 +1,8 @@
-# Lab 5 — Kubernetes (planned)
+# Lab 5 — Kubernetes
 
-**Status:** stub — `enable_lab5 = false` by default (cost). **Last** lab in the path.
+Terraform lives in **independent stack 3**:
 
-| Cloud | Target |
-|-------|--------|
-| AWS | EKS |
-| Azure | AKS |
-| GCP | GKE |
+`infrastructure/<aws|azure|gcp>/kubernetes/`
 
-**SA owns:** cluster / node sensor install.  
-Do **not** enable with the day-1 stack — control-plane hours add up. Run after Labs 1–3 (and optionally Lab 4), then destroy promptly.
-
-See [docs/LEARNING-PATH.md](../docs/LEARNING-PATH.md).
+Not part of the Labs 1–3 apply. Planned: EKS \| AKS \| GKE.  
+Last / most expensive — destroy promptly.

@@ -1,3 +1,6 @@
+# Stack 1 of 3 — Labs 1–3 (Storage + VM and Hosts + Serverless)
+# Independent of containers/ and kubernetes/. Destroy this stack without touching those.
+
 terraform {
   required_version = ">= 1.5.0"
   required_providers {
@@ -33,35 +36,6 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 + 3 = onboarding day (cost-minded). Lab 4/5 opt-in later.
-variable "enable_lab1" {
-  type    = bool
-  default = true
-}
-
-variable "enable_lab2" {
-  type    = bool
-  default = true
-}
-
-variable "enable_lab3" {
-  type        = bool
-  default     = true
-  description = "Cloud Run from public Docker Hub python:3.9-bullseye (no GAR)."
-}
-
-variable "enable_lab4" {
-  type        = bool
-  default     = false
-  description = "Planned — managed containers (optional; Cloud Run already covers much). Keep false for cost."
-}
-
-variable "enable_lab5" {
-  type        = bool
-  default     = false
-  description = "Planned — GKE. Keep false until lab5-kubernetes lands (cost)."
-}
-
 variable "serverless_image" {
   type        = string
   default     = "docker.io/library/python:3.9-bullseye"
@@ -78,8 +52,10 @@ variable "repo_ref" {
   default = "main"
 }
 
+data "google_project" "current" {}
+
 locals {
-  data_dir = "${path.module}/../../lab1-public-data"
+  data_dir = "${path.module}/../../../lab1-public-data"
   lab1_objects = {
     "exports/name-ssn-ccn.csv"   = { file = "name-ssn-ccn.csv", content_type = "text/csv" }
     "exports/name-ssn-dob.csv"   = { file = "name-ssn-dob.csv", content_type = "text/csv" }
@@ -87,11 +63,10 @@ locals {
     "exports/name-dob-email.csv" = { file = "name-dob-email.csv", content_type = "text/csv" }
     "exports/customers.json"     = { file = "customers.json", content_type = "application/json" }
   }
-  # Two buckets = full CSPM loop without re-breaking: remediate one, risk-accept the other.
-  lab1_buckets = var.enable_lab1 ? {
+  lab1_buckets = {
     remediate = { suffix = "remediate", cspm_loop = "remediate" }
     exception = { suffix = "exception", cspm_loop = "risk-accept" }
-  } : {}
+  }
   lab1_object_keys = {
     for pair in setproduct(keys(local.lab1_buckets), keys(local.lab1_objects)) :
     "${pair[0]}|${pair[1]}" => {
@@ -101,81 +76,7 @@ locals {
       content_type = local.lab1_objects[pair[1]].content_type
     }
   }
-}
-
-data "google_project" "current" {}
-
-# ---------------------------------------------------------------------------
-# Lab 1 — two public GCS buckets + synthetic PII (remediate + risk-accept)
-# ---------------------------------------------------------------------------
-
-resource "google_storage_bucket" "lab1" {
-  for_each      = local.lab1_buckets
-  name          = "${var.name_prefix}-${each.value.suffix}-${data.google_project.current.number}"
-  location      = var.region
-  force_destroy = true
-
-  uniform_bucket_level_access = true
-
-  labels = {
-    project      = "jayswakezone"
-    lab          = "1"
-    cspm_loop    = each.value.cspm_loop
-    demo_finding = "public-gcs-bucket"
-    dataclass    = "synthetic-pii"
-  }
-}
-
-resource "google_storage_bucket_iam_member" "lab1_public" {
-  for_each = local.lab1_buckets
-  bucket   = google_storage_bucket.lab1[each.key].name
-  role     = "roles/storage.objectViewer"
-  member   = "allUsers"
-}
-
-resource "google_storage_bucket_object" "lab1_objects" {
-  for_each = local.lab1_object_keys
-
-  name         = each.value.object_key
-  bucket       = google_storage_bucket.lab1[each.value.bucket_key].name
-  source       = "${local.data_dir}/${each.value.file}"
-  content_type = each.value.content_type
-}
-
-# ---------------------------------------------------------------------------
-# Lab 2 — DVWA-lite on GCE (Docker)
-# ---------------------------------------------------------------------------
-
-resource "google_compute_network" "main" {
-  count                   = var.enable_lab2 ? 1 : 0
-  name                    = "${var.name_prefix}-vpc"
-  auto_create_subnetworks = false
-}
-
-resource "google_compute_subnetwork" "main" {
-  count         = var.enable_lab2 ? 1 : 0
-  name          = "${var.name_prefix}-subnet"
-  ip_cidr_range = "10.50.0.0/24"
-  region        = var.region
-  network       = google_compute_network.main[0].id
-}
-
-resource "google_compute_firewall" "lab2" {
-  count   = var.enable_lab2 ? 1 : 0
-  name    = "${var.name_prefix}-allow-app"
-  network = google_compute_network.main[0].name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["22", "8080", "10000"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["jayswakezone"]
-}
-
-locals {
-  startup = <<-EOF
+  startup   = <<-EOF
     #!/bin/bash
     set -euxo pipefail
     export REPO_URL='${var.repo_url}'
@@ -186,75 +87,6 @@ locals {
     chmod +x /tmp/jwz/scripts/install-app.sh
     /tmp/jwz/scripts/install-app.sh
   EOF
-}
-
-resource "google_compute_instance" "lab2" {
-  count        = var.enable_lab2 ? 1 : 0
-  name         = "${var.name_prefix}-lab2"
-  machine_type = "e2-standard-2"
-  zone         = var.zone
-  tags         = ["jayswakezone"]
-
-  boot_disk {
-    initialize_params {
-      image = "ubuntu-os-cloud/ubuntu-2204-lts"
-      size  = 40
-    }
-  }
-
-  network_interface {
-    subnetwork = google_compute_subnetwork.main[0].id
-    access_config {}
-  }
-
-  metadata_startup_script = local.startup
-
-  labels = {
-    project = "jayswakezone"
-    lab     = "2"
-    track   = "vm-and-hosts"
-  }
-}
-
-output "lab1_remediate_bucket" {
-  description = "Fix this one (remove public IAM → reassess clear)"
-  value       = var.enable_lab1 ? google_storage_bucket.lab1["remediate"].name : null
-}
-
-output "lab1_remediate_url" {
-  value = var.enable_lab1 ? "https://storage.googleapis.com/${google_storage_bucket.lab1["remediate"].name}/exports/customers.json" : null
-}
-
-output "lab1_exception_bucket" {
-  description = "Leave public; whitelist / accept risk"
-  value       = var.enable_lab1 ? google_storage_bucket.lab1["exception"].name : null
-}
-
-output "lab1_exception_url" {
-  value = var.enable_lab1 ? "https://storage.googleapis.com/${google_storage_bucket.lab1["exception"].name}/exports/customers.json" : null
-}
-
-output "lab2_application_url" {
-  value = var.enable_lab2 ? "http://${google_compute_instance.lab2[0].network_interface[0].access_config[0].nat_ip}:8080/labs" : null
-}
-
-output "lab2_webmin_url" {
-  value = var.enable_lab2 ? "https://${google_compute_instance.lab2[0].network_interface[0].access_config[0].nat_ip}:10000" : null
-}
-
-output "lab2_webmin_credentials" {
-  value = var.enable_lab2 ? "admin / password" : null
-}
-
-output "lab2_public_ip" {
-  value = var.enable_lab2 ? google_compute_instance.lab2[0].network_interface[0].access_config[0].nat_ip : null
-}
-
-# ---------------------------------------------------------------------------
-# Lab 3 — Cloud Run from public Docker Hub python:3.9-bullseye (no GAR)
-# ---------------------------------------------------------------------------
-
-locals {
   lab3_boot = <<-BOOT
     set -e
     pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
@@ -273,8 +105,99 @@ locals {
   BOOT
 }
 
+# --- Lab 1 ---
+
+resource "google_storage_bucket" "lab1" {
+  for_each      = local.lab1_buckets
+  name          = "${var.name_prefix}-${each.value.suffix}-${data.google_project.current.number}"
+  location      = var.region
+  force_destroy = true
+
+  uniform_bucket_level_access = true
+
+  labels = {
+    project      = "jayswakezone"
+    stack        = "labs-1-3"
+    lab          = "1"
+    cspm_loop    = each.value.cspm_loop
+    demo_finding = "public-gcs-bucket"
+    dataclass    = "synthetic-pii"
+  }
+}
+
+resource "google_storage_bucket_iam_member" "lab1_public" {
+  for_each = local.lab1_buckets
+  bucket   = google_storage_bucket.lab1[each.key].name
+  role     = "roles/storage.objectViewer"
+  member   = "allUsers"
+}
+
+resource "google_storage_bucket_object" "lab1_objects" {
+  for_each     = local.lab1_object_keys
+  name         = each.value.object_key
+  bucket       = google_storage_bucket.lab1[each.value.bucket_key].name
+  source       = "${local.data_dir}/${each.value.file}"
+  content_type = each.value.content_type
+}
+
+# --- Lab 2 — VM and Hosts ---
+
+resource "google_compute_network" "main" {
+  name                    = "${var.name_prefix}-vpc"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "main" {
+  name          = "${var.name_prefix}-subnet"
+  ip_cidr_range = "10.50.0.0/24"
+  region        = var.region
+  network       = google_compute_network.main.id
+}
+
+resource "google_compute_firewall" "lab2" {
+  name    = "${var.name_prefix}-allow-app"
+  network = google_compute_network.main.name
+
+  allow {
+    protocol = "tcp"
+    ports    = ["22", "8080", "10000"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["jayswakezone"]
+}
+
+resource "google_compute_instance" "lab2" {
+  name         = "${var.name_prefix}-lab2"
+  machine_type = "e2-standard-2"
+  zone         = var.zone
+  tags         = ["jayswakezone"]
+
+  boot_disk {
+    initialize_params {
+      image = "ubuntu-os-cloud/ubuntu-2204-lts"
+      size  = 40
+    }
+  }
+
+  network_interface {
+    subnetwork = google_compute_subnetwork.main.id
+    access_config {}
+  }
+
+  metadata_startup_script = local.startup
+
+  labels = {
+    project = "jayswakezone"
+    stack   = "labs-1-3"
+    lab     = "2"
+    track   = "vm-and-hosts"
+  }
+}
+
+# --- Lab 3 — Cloud Run ---
+
 resource "google_cloud_run_v2_service" "lab3" {
-  count    = var.enable_lab3 ? 1 : 0
   name     = "${var.name_prefix}-lab3"
   location = var.region
   ingress  = "INGRESS_TRAFFIC_ALL"
@@ -302,24 +225,58 @@ resource "google_cloud_run_v2_service" "lab3" {
 
   labels = {
     project = "jayswakezone"
+    stack   = "labs-1-3"
     lab     = "3"
   }
 }
 
 resource "google_cloud_run_v2_service_iam_member" "lab3_public" {
-  count    = var.enable_lab3 ? 1 : 0
   project  = var.project_id
-  location = google_cloud_run_v2_service.lab3[0].location
-  name     = google_cloud_run_v2_service.lab3[0].name
+  location = google_cloud_run_v2_service.lab3.location
+  name     = google_cloud_run_v2_service.lab3.name
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
 
+output "lab1_remediate_bucket" {
+  description = "Fix this one (remove public IAM → reassess clear)"
+  value       = google_storage_bucket.lab1["remediate"].name
+}
+
+output "lab1_remediate_url" {
+  value = "https://storage.googleapis.com/${google_storage_bucket.lab1["remediate"].name}/exports/customers.json"
+}
+
+output "lab1_exception_bucket" {
+  description = "Leave public; whitelist / accept risk"
+  value       = google_storage_bucket.lab1["exception"].name
+}
+
+output "lab1_exception_url" {
+  value = "https://storage.googleapis.com/${google_storage_bucket.lab1["exception"].name}/exports/customers.json"
+}
+
+output "lab2_application_url" {
+  value = "http://${google_compute_instance.lab2.network_interface[0].access_config[0].nat_ip}:8080/labs"
+}
+
+output "lab2_webmin_url" {
+  value = "https://${google_compute_instance.lab2.network_interface[0].access_config[0].nat_ip}:10000"
+}
+
+output "lab2_webmin_credentials" {
+  value = "admin / password"
+}
+
+output "lab2_public_ip" {
+  value = google_compute_instance.lab2.network_interface[0].access_config[0].nat_ip
+}
+
 output "lab3_service_name" {
-  value = var.enable_lab3 ? google_cloud_run_v2_service.lab3[0].name : null
+  value = google_cloud_run_v2_service.lab3.name
 }
 
 output "lab3_service_url" {
   description = "Cloud Run URL — SA installs tracer themselves"
-  value       = var.enable_lab3 ? google_cloud_run_v2_service.lab3[0].uri : null
+  value       = google_cloud_run_v2_service.lab3.uri
 }

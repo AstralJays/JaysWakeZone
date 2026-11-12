@@ -8,35 +8,49 @@
 <p align="center">
   <a href="https://github.com/AstralJays/JaysWakeZone"><img src="https://img.shields.io/badge/org-AstralJays-24292f.svg?logo=github" alt="AstralJays" /></a>
   <img src="https://img.shields.io/badge/cloud-AWS%20%7C%20Azure%20%7C%20GCP-success.svg" alt="Clouds" />
-  <img src="https://img.shields.io/badge/flow-fork%20%E2%86%92%20clone%20%E2%86%92%20tf%20apply-informational.svg" alt="Flow" />
+  <img src="https://img.shields.io/badge/stacks-3%20per%20cloud-informational.svg" alt="Stacks" />
 </p>
 
 ---
 
 > [!CAUTION]
 > **Intentionally vulnerable — do not use in production.**  
-> Public storage with synthetic PII, open ports, exploitable labs, Webmin (`admin` / `password`).  
-> Sandbox accounts only. `terraform destroy` when finished.
+> Sandbox accounts only. Destroy each stack when finished.
 
-## Grab and go
+## Three independent Terraform stacks (per cloud)
+
+Pick **one** cloud. Each folder is its **own** state — apply / destroy separately (cost control).
+
+| Stack | Path | What’s in it | When |
+|-------|------|--------------|------|
+| **1 — Labs 1–3** | `infrastructure/<cloud>/labs-1-3/` | Storage · VM and Hosts · Serverless | Onboarding day |
+| **2 — Containers** | `infrastructure/<cloud>/containers/` | ECS Fargate \| Azure Container Apps | Later track |
+| **3 — Kubernetes** | `infrastructure/<cloud>/kubernetes/` | EKS \| AKS \| GKE | Last / most expensive |
 
 ```text
-1. Fork  →  AstralJays/JaysWakeZone  into your GitHub
-2. Clone →  your fork locally
-3. Pick  →  one cloud (AWS or Azure or GCP)
-4. Apply →  terraform init && terraform apply
-5. Use   →  terraform output  →  run labs in Upwind
-6. Done  →  terraform destroy
+infrastructure/
+  aws|azure|gcp/
+    labs-1-3/      ← day-1 grab-and-go
+    containers/    ← planned (independent apply)
+    kubernetes/    ← planned (independent apply)
 ```
 
-You never build or push container images.  
-**Upwind is not in this repo** — connect the account and install sensors/tracers after apply.
+## Grab and go (stack 1 only)
+
+```text
+1. Fork AstralJays/JaysWakeZone
+2. Clone your fork
+3. Pick one cloud
+4. cd infrastructure/<cloud>/labs-1-3
+5. terraform init && terraform apply && terraform output
+6. Install sensors/tracers in Upwind
+7. terraform destroy   # this stack only
+```
 
 ### AWS
 
 ```bash
-git clone https://github.com/<YOU>/JaysWakeZone.git
-cd JaysWakeZone/infrastructure/aws
+cd infrastructure/aws/labs-1-3
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply && terraform output
 ```
@@ -44,48 +58,39 @@ terraform init && terraform apply && terraform output
 ### Azure
 
 ```bash
-cd JaysWakeZone/infrastructure/azure
+cd infrastructure/azure/labs-1-3
 cp terraform.tfvars.example terraform.tfvars
-# set ssh_public_key = "ssh-rsa AAAA..."
+# set ssh_public_key
 terraform init && terraform apply && terraform output
 ```
 
 ### GCP
 
 ```bash
-cd JaysWakeZone/infrastructure/gcp
+cd infrastructure/gcp/labs-1-3
 cp terraform.tfvars.example terraform.tfvars
-# set project_id = "your-project"
+# set project_id
 terraform init && terraform apply && terraform output
 ```
 
-**Onboarding day = Labs 1 + 2 + 3 only** (cost-minded). Labs 4–5 stay off.
+## Labs in stack 1
 
-## What you get
+| Lab | Creates | You do after apply |
+|-----|---------|--------------------|
+| **1** Storage | Two public PII stores | CSPM: fix one, risk-accept the other |
+| **2** VM and Hosts | Linux VM + DVWA-lite + Webmin | Host eBPF sensor + `/labs` attacks |
+| **3** Serverless | Lambda / App Service / Cloud Run | Tracer + hit URL |
 
-| Lab | Terraform creates | Default | You do after apply |
-|-----|-------------------|---------|--------------------|
-| **1** Storage | Two public PII stores | on | CSPM: fix one, risk-accept the other |
-| **2** VM and Hosts | Linux VM + DVWA-lite + Webmin | on | Install **host eBPF sensor**, run `/labs` |
-| **3** Serverless | Lambda / App Service / Cloud Run | on | Install **tracer**, hit the URL |
-| **4** Managed containers | ECS Fargate \| Azure Container Apps | **off** | Tracer on containers *(planned)* |
-| **5** Kubernetes | EKS \| AKS \| GKE | **off** | Cluster sensor *(planned)* |
-
-### Useful outputs (Labs 1–3)
-
-- Lab 1: `lab1_remediate_*` · `lab1_exception_*`
-- Lab 2: `lab2_application_url` · `lab2_webmin_url` (`admin` / `password`) · `lab2_public_ip`
-- Lab 3: `lab3_function_url` (AWS) · `lab3_app_url` (Azure) · `lab3_service_url` (GCP)
+Outputs: `lab1_*` · `lab2_*` · `lab3_*`
 
 ## Cost hygiene
 
-- One cloud per SA.
-- Leave `enable_lab4` / `enable_lab5` **false** unless you are on that track.
-- Prefer scale-to-zero platforms when Lab 4 lands; destroy K8s promptly.
-- Always `terraform destroy` when the session ends.
+- Day-1 = **stack 1 only**. Leave `containers/` and `kubernetes/` alone until needed.
+- Destroy stack 1 before (or instead of) standing up stack 2/3 if you are spend-sensitive.
+- Each stack destroys independently — no shared enable flags.
 
-## Before labs — connect the account
+## Before labs
 
-In Upwind, connect the sandbox cloud so CSPM, agentless, DSPM, and activity logs / CDR are on.
+Connect the sandbox cloud in Upwind (CSPM · agentless · DSPM · activity logs / CDR).
 
-More detail: [docs/LEARNING-PATH.md](docs/LEARNING-PATH.md) · [docs/SA-ONBOARDING.md](docs/SA-ONBOARDING.md)
+[docs/LEARNING-PATH.md](docs/LEARNING-PATH.md) · [docs/SA-ONBOARDING.md](docs/SA-ONBOARDING.md)
