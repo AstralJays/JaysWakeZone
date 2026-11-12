@@ -30,7 +30,7 @@ infrastructure/<aws|azure|gcp>/
 |--------|------|--------------|
 | `lab1-3/` | **1** Storage · **2** VM and Hosts · **3** Serverless | Day-1 onboarding |
 | `lab4-containers/` | **4** Juice Shop (public image) | ECS Fargate \| ACA \| Cloud Run |
-| `lab5-kubernetes/` | **5** Kubernetes | EKS \| AKS \| GKE |
+| `lab5-kubernetes/` | **5** DVAA (public image) | EKS \| AKS \| GKE |
 
 Each folder is its **own** Terraform state — apply/destroy independently.
 
@@ -65,7 +65,7 @@ terraform init && terraform apply   # → lab5_url  (destroy ASAP)
 | 2 | `lab2-hosts-vms/` |
 | 3 | `lab3-serverless/` |
 | 4 | `lab4-containers/` (Juice Shop image) |
-| 5 | `lab5-kubernetes/` |
+| 5 | `lab5-kubernetes/` (Damn Vulnerable AI Agent) |
 
 Public Docker Hub only for container/K8s workloads — no ECR/ACR/GAR.
 

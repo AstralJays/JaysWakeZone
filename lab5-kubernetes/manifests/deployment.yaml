@@ -1,69 +1,66 @@
 # Reference manifest — Terraform applies equivalent via kubernetes_* resources.
-# Image: public Docker Hub python:3.9-bullseye (no private registry).
+# Image: public Docker Hub opena2a/dvaa (no private registry).
+# https://hub.docker.com/r/opena2a/dvaa
+# https://github.com/opena2a-org/damn-vulnerable-ai-agent
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jwz-cve-flask
+  name: jwz-dvaa
   labels:
-    app: jwz-cve-flask
+    app: jwz-dvaa
     lab: "5"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: jwz-cve-flask
+      app: jwz-dvaa
   template:
     metadata:
       labels:
-        app: jwz-cve-flask
+        app: jwz-dvaa
     spec:
       containers:
-        - name: app
-          image: python:3.9-bullseye
+        - name: dvaa
+          image: opena2a/dvaa:0.9.2
           imagePullPolicy: IfNotPresent
           env:
-            - name: JWZ_LAB
-              value: "5-kubernetes"
-            - name: PORT
-              value: "8080"
-          command: ["bash", "-c"]
-          args:
-            - |
-              set -e
-              pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
-              cat >/tmp/jwz_app.py <<'PY'
-              import os
-              from flask import Flask
-              app = Flask(__name__)
-              LAB = os.environ.get("JWZ_LAB", "5-kubernetes")
-              @app.route("/")
-              def index():
-                  return {"status": "running", "demo": "cve-detection", "lab": LAB}
-              @app.route("/health")
-              def health():
-                  return {"ok": True}
-              app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
-              PY
-              exec python /tmp/jwz_app.py
+            - name: OPENA2A_TELEMETRY
+              value: "off"
           ports:
-            - containerPort: 8080
+            - name: dashboard
+              containerPort: 9000
           readinessProbe:
             httpGet:
-              path: /health
-              port: 8080
-            initialDelaySeconds: 20
-            periodSeconds: 10
+              path: /
+              port: 9000
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9000
+            initialDelaySeconds: 90
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 1500m
+              memory: 3Gi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: jwz-cve-flask
+  name: jwz-dvaa
   labels:
-    app: jwz-cve-flask
+    app: jwz-dvaa
 spec:
   type: LoadBalancer
   selector:
-    app: jwz-cve-flask
+    app: jwz-dvaa
   ports:
-    - port: 80
-      targetPort: 8080
+    - name: dashboard
+      port: 80
+      targetPort: 9000

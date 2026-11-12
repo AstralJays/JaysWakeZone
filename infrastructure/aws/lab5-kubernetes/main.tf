@@ -1,5 +1,6 @@
-# Stack 3 of 3 — EKS + Flask CVE workload (Lab 5)
-# 1× t3.small node — destroy promptly (control plane + node hours).
+# Stack 3 of 3 — EKS + Damn Vulnerable AI Agent (Lab 5)
+# 1× t3.medium node — destroy promptly (control plane + node hours).
+# Image: public Docker Hub opena2a/dvaa (no private registry / no build).
 
 terraform {
   required_version = ">= 1.5.0"
@@ -31,8 +32,9 @@ variable "name_prefix" {
 }
 
 variable "container_image" {
-  type    = string
-  default = "python:3.9-bullseye"
+  type        = string
+  description = "Public DVAA image — https://hub.docker.com/r/opena2a/dvaa"
+  default     = "opena2a/dvaa:0.9.2"
 }
 
 provider "aws" {
@@ -43,28 +45,6 @@ provider "aws" {
 data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {
   state = "available"
-}
-
-locals {
-  boot = <<-BOOT
-    set -e
-    export JWZ_LAB=5-kubernetes PORT=8080
-    pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
-    cat >/tmp/jwz_app.py <<'PY'
-    import os
-    from flask import Flask
-    app = Flask(__name__)
-    LAB = os.environ.get("JWZ_LAB", "5-kubernetes")
-    @app.route("/")
-    def index():
-        return {"status": "running", "demo": "cve-detection", "lab": LAB}
-    @app.route("/health")
-    def health():
-        return {"ok": True}
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
-    PY
-    exec python /tmp/jwz_app.py
-  BOOT
 }
 
 resource "aws_vpc" "k8s" {
@@ -173,8 +153,9 @@ resource "aws_eks_node_group" "lab5" {
   node_group_name = "jwz"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = aws_subnet.public[*].id
-  instance_types  = ["t3.small"]
-  capacity_type   = "ON_DEMAND"
+  # DVAA runs ~19 agents — 2 GiB nodes OOMs; t3.medium ≈ 4 GiB
+  instance_types = ["t3.medium"]
+  capacity_type  = "ON_DEMAND"
 
   scaling_config {
     desired_size = 1
@@ -201,9 +182,9 @@ provider "kubernetes" {
 
 resource "kubernetes_deployment" "jwz" {
   metadata {
-    name = "jwz-cve-flask"
+    name = "jwz-dvaa"
     labels = {
-      app = "jwz-cve-flask"
+      app = "jwz-dvaa"
       lab = "5"
     }
   }
@@ -211,41 +192,55 @@ resource "kubernetes_deployment" "jwz" {
   spec {
     replicas = 1
     selector {
-      match_labels = { app = "jwz-cve-flask" }
+      match_labels = { app = "jwz-dvaa" }
     }
     template {
       metadata {
-        labels = { app = "jwz-cve-flask" }
+        labels = { app = "jwz-dvaa" }
       }
       spec {
         container {
-          name  = "app"
-          image = var.container_image
+          name              = "dvaa"
+          image             = var.container_image
+          image_pull_policy = "IfNotPresent"
+
           env {
-            name  = "JWZ_LAB"
-            value = "5-kubernetes"
+            name  = "OPENA2A_TELEMETRY"
+            value = "off"
           }
-          env {
-            name  = "PORT"
-            value = "8080"
-          }
-          command = ["bash", "-c"]
-          args    = [local.boot]
+
           port {
-            container_port = 8080
+            name           = "dashboard"
+            container_port = 9000
           }
+
           readiness_probe {
             http_get {
-              path = "/health"
-              port = 8080
+              path = "/"
+              port = 9000
             }
-            initial_delay_seconds = 30
-            period_seconds        = 10
+            initial_delay_seconds = 45
+            period_seconds        = 15
+            failure_threshold     = 6
           }
+
+          liveness_probe {
+            http_get {
+              path = "/"
+              port = 9000
+            }
+            initial_delay_seconds = 90
+            period_seconds        = 30
+          }
+
           resources {
             requests = {
-              cpu    = "100m"
-              memory = "256Mi"
+              cpu    = "500m"
+              memory = "1Gi"
+            }
+            limits = {
+              cpu    = "1500m"
+              memory = "3Gi"
             }
           }
         }
@@ -256,18 +251,20 @@ resource "kubernetes_deployment" "jwz" {
   depends_on = [aws_eks_node_group.lab5]
 }
 
+# Dashboard only on the LB — agent ports stay in-cluster (port-forward for HMA).
 resource "kubernetes_service" "jwz" {
   metadata {
-    name = "jwz-cve-flask"
+    name = "jwz-dvaa"
   }
   spec {
     type = "LoadBalancer"
     selector = {
-      app = "jwz-cve-flask"
+      app = "jwz-dvaa"
     }
     port {
+      name        = "dashboard"
       port        = 80
-      target_port = 8080
+      target_port = 9000
     }
   }
 
@@ -279,10 +276,15 @@ output "lab5_cluster_name" {
 }
 
 output "lab5_url" {
-  description = "Wait for LB to provision, then open — install cluster sensor yourself"
+  description = "DVAA dashboard (intentionally vulnerable — lab only). Install cluster sensor yourself."
   value       = try("http://${kubernetes_service.jwz.status[0].load_balancer[0].ingress[0].hostname}", "pending-lb")
 }
 
 output "lab5_kubeconfig_hint" {
   value = "aws eks update-kubeconfig --region ${var.aws_region} --name ${aws_eks_cluster.lab5.name}"
+}
+
+output "lab5_port_forward_agents" {
+  description = "Forward agent ports for HackMyAgent / curl against the fleet"
+  value       = "kubectl port-forward deploy/jwz-dvaa 9000:9000 7003:7003"
 }

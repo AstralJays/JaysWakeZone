@@ -1,4 +1,6 @@
+# Stack 3/3 — GKE + DVAA. 1× e2-medium — destroy when done.
 project_id  = "YOUR_GCP_PROJECT"
 region      = "us-central1"
 zone        = "us-central1-a"
 name_prefix = "jayswakezone"
+# container_image = "docker.io/opena2a/dvaa:0.9.2"

@@ -1,5 +1,6 @@
-# Stack 3 of 3 — GKE + Flask CVE workload (Lab 5)
-# 1× e2-small zonal — destroy promptly.
+# Stack 3 of 3 — GKE + Damn Vulnerable AI Agent (Lab 5)
+# 1× e2-medium zonal — destroy promptly.
+# Image: public Docker Hub opena2a/dvaa (no private registry / no build).
 
 terraform {
   required_version = ">= 1.5.0"
@@ -41,30 +42,9 @@ variable "name_prefix" {
 }
 
 variable "container_image" {
-  type    = string
-  default = "docker.io/library/python:3.9-bullseye"
-}
-
-locals {
-  boot = <<-BOOT
-    set -e
-    export JWZ_LAB=5-kubernetes PORT=8080
-    pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
-    cat >/tmp/jwz_app.py <<'PY'
-    import os
-    from flask import Flask
-    app = Flask(__name__)
-    LAB = os.environ.get("JWZ_LAB", "5-kubernetes")
-    @app.route("/")
-    def index():
-        return {"status": "running", "demo": "cve-detection", "lab": LAB}
-    @app.route("/health")
-    def health():
-        return {"ok": True}
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
-    PY
-    exec python /tmp/jwz_app.py
-  BOOT
+  type        = string
+  description = "Public DVAA image — https://hub.docker.com/r/opena2a/dvaa"
+  default     = "docker.io/opena2a/dvaa:0.9.2"
 }
 
 resource "google_container_cluster" "lab5" {
@@ -77,7 +57,6 @@ resource "google_container_cluster" "lab5" {
   networking_mode = "VPC_NATIVE"
   ip_allocation_policy {}
 
-  # Cheaper: no logging/monitoring extras beyond defaults where possible
   logging_service    = "none"
   monitoring_service = "none"
 
@@ -95,7 +74,8 @@ resource "google_container_node_pool" "lab5" {
   node_count = 1
 
   node_config {
-    machine_type = "e2-small"
+    # DVAA fleet needs ~4 GiB headroom
+    machine_type = "e2-medium"
     disk_size_gb = 30
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
@@ -124,43 +104,63 @@ provider "kubernetes" {
 
 resource "kubernetes_deployment" "jwz" {
   metadata {
-    name   = "jwz-cve-flask"
-    labels = { app = "jwz-cve-flask", lab = "5" }
+    name   = "jwz-dvaa"
+    labels = { app = "jwz-dvaa", lab = "5" }
   }
 
   spec {
     replicas = 1
     selector {
-      match_labels = { app = "jwz-cve-flask" }
+      match_labels = { app = "jwz-dvaa" }
     }
     template {
       metadata {
-        labels = { app = "jwz-cve-flask" }
+        labels = { app = "jwz-dvaa" }
       }
       spec {
         container {
-          name  = "app"
-          image = var.container_image
+          name              = "dvaa"
+          image             = var.container_image
+          image_pull_policy = "IfNotPresent"
+
           env {
-            name  = "JWZ_LAB"
-            value = "5-kubernetes"
+            name  = "OPENA2A_TELEMETRY"
+            value = "off"
           }
-          env {
-            name  = "PORT"
-            value = "8080"
-          }
-          command = ["bash", "-c"]
-          args    = [local.boot]
+
           port {
-            container_port = 8080
+            name           = "dashboard"
+            container_port = 9000
           }
+
           readiness_probe {
             http_get {
-              path = "/health"
-              port = 8080
+              path = "/"
+              port = 9000
             }
-            initial_delay_seconds = 30
-            period_seconds        = 10
+            initial_delay_seconds = 45
+            period_seconds        = 15
+            failure_threshold     = 6
+          }
+
+          liveness_probe {
+            http_get {
+              path = "/"
+              port = 9000
+            }
+            initial_delay_seconds = 90
+            period_seconds        = 30
+          }
+
+          resources {
+            requests = {
+              cpu    = "500m"
+              memory = "1Gi"
+            }
+            limits = {
+              cpu    = "1500m"
+              memory = "3Gi"
+            }
           }
         }
       }
@@ -172,14 +172,15 @@ resource "kubernetes_deployment" "jwz" {
 
 resource "kubernetes_service" "jwz" {
   metadata {
-    name = "jwz-cve-flask"
+    name = "jwz-dvaa"
   }
   spec {
     type     = "LoadBalancer"
-    selector = { app = "jwz-cve-flask" }
+    selector = { app = "jwz-dvaa" }
     port {
+      name        = "dashboard"
       port        = 80
-      target_port = 8080
+      target_port = 9000
     }
   }
 }
@@ -189,10 +190,15 @@ output "lab5_cluster_name" {
 }
 
 output "lab5_url" {
-  description = "Wait for LB IP — install cluster sensor yourself"
+  description = "DVAA dashboard (intentionally vulnerable — lab only). Install cluster sensor yourself."
   value       = try("http://${kubernetes_service.jwz.status[0].load_balancer[0].ingress[0].ip}", "pending-lb")
 }
 
 output "lab5_kubeconfig_hint" {
   value = "gcloud container clusters get-credentials ${google_container_cluster.lab5.name} --zone ${var.zone} --project ${var.project_id}"
+}
+
+output "lab5_port_forward_agents" {
+  description = "Forward agent ports for HackMyAgent / curl against the fleet"
+  value       = "kubectl port-forward deploy/jwz-dvaa 9000:9000 7003:7003"
 }

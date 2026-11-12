@@ -1,4 +1,4 @@
-# AWS stack 3/3 — EKS (Lab 5)
+# AWS stack 3/3 — EKS (Lab 5) — Damn Vulnerable AI Agent
 
 ```bash
 cd infrastructure/aws/lab5-kubernetes
@@ -7,5 +7,5 @@ terraform init && terraform apply
 terraform output
 ```
 
-Deploys Flask CVE demo (public `python:3.9-bullseye`) behind a LoadBalancer Service.  
+Pulls [`opena2a/dvaa:0.9.2`](https://hub.docker.com/r/opena2a/dvaa) onto 1× `t3.medium` behind a LoadBalancer (dashboard).  
 **Destroy promptly.** Install the Upwind cluster/node sensor yourself.
