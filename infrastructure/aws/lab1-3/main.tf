@@ -189,7 +189,7 @@ resource "aws_s3_object" "lab1_objects" {
 
 resource "aws_security_group" "lab2" {
   name_prefix = "${var.name_prefix}-"
-  description = "JaysWakeZone Lab 2 VM and Hosts — HTTP + SSH"
+  description = "JaysWakeZone Lab 2 VM and Hosts HTTP + SSH"
 
   ingress {
     description = "SSH"
