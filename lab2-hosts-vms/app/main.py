@@ -168,7 +168,14 @@ def _startup() -> None:
 
 @app.get("/")
 def home():
-    return RedirectResponse("/labs", status_code=302)
+    return RedirectResponse("/walkthrough", status_code=302)
+
+
+@app.get("/walkthrough", response_class=HTMLResponse)
+def walkthrough(request: Request):
+    return templates.TemplateResponse(
+        "walkthrough.html", _ctx(request, title="Walkthrough")
+    )
 
 
 @app.get("/labs", response_class=HTMLResponse)

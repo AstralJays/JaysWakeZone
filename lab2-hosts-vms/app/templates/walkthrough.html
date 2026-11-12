@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="hero">
+  <p class="eyebrow">Lab 2 · VM and Hosts</p>
+  <h1>Walkthrough</h1>
+  <p>
+    Follow these steps in order. This app is intentionally vulnerable —
+    the goal is Upwind detections, not “hacking for fun.”
+  </p>
+</header>
+
+<ol class="steps">
+  <li>
+    <strong>Connect the cloud account</strong>
+    <p>In Upwind, onboard this sandbox cloud so CSPM, agentless, DSPM, and activity logs are on.</p>
+  </li>
+  <li>
+    <strong>Get a shell on this VM</strong>
+    <p>
+      AWS: <code>aws ssm start-session</code> (see terraform output <code>lab2_ssm_command</code>).<br />
+      Azure: SSH with the key from tfvars.<br />
+      GCP: <code>gcloud compute ssh</code>.
+    </p>
+  </li>
+  <li>
+    <strong>Install the Upwind host sensor</strong>
+    <p>
+      Paste the install command from the Upwind console / portal.
+      Wait until this host shows up and has baselined <strong>L3 / L4 / L7</strong>
+      before generating attack traffic.
+    </p>
+  </li>
+  <li>
+    <strong>Run Function-in-use modules</strong>
+    <p>
+      Open <a href="/labs">All labs</a> and hit the FiU cards (Pillow ×3, Brotli, PyYAML, tarfile).
+      In Upwind, check Vuln Management → <strong>Function in use</strong>.
+    </p>
+  </li>
+  <li>
+    <strong>Run classic AppSec + Webmin</strong>
+    <p>
+      SQLi login, path traversal, and command injection from the lab list.
+      Then open Webmin on port <code>10000</code> with <code>admin</code> / <code>password</code>
+      for an exposed management-plane story.
+    </p>
+  </li>
+  <li>
+    <strong>Investigate in Upwind</strong>
+    <p>
+      Threats / Stories, runtime map, and FiU findings.
+      Tie evidence back to this host and the modules you ran.
+    </p>
+  </li>
+  <li>
+    <strong>Tear down</strong>
+    <p><code>terraform destroy</code> in <code>infrastructure/&lt;cloud&gt;/lab1-3</code> when finished.</p>
+  </li>
+</ol>
+
+<section class="panel">
+  <h2>Quick reference</h2>
+  <pre>App:     this page /labs
+Webmin:  https://&lt;host&gt;:10000   admin / password
+SQLi:    email  ' OR '1'='1     password  anything
+
+Demo users:
+  jordan.lee@example.com / jordanwaves
+  sam.nguyen@example.com / samwaves
+  admin@jayswakezone.example / staffadmin</pre>
+</section>
+
+<p class="hint">Repo copy of these steps: <code>lab2-hosts-vms/WALKTHROUGH.md</code></p>
+{% endblock %}

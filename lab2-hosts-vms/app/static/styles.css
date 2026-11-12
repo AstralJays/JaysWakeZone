@@ -98,6 +98,24 @@ body {
   margin: 1rem 0;
 }
 .panel h2 { margin: 0 0 0.75rem; font-size: 1.05rem; }
+
+.steps {
+  margin: 1.25rem 0 1.5rem;
+  padding: 0 0 0 1.25rem;
+  max-width: 42rem;
+  display: grid;
+  gap: 0.95rem;
+}
+.steps li { padding-left: 0.35rem; }
+.steps strong { display: block; margin-bottom: 0.2rem; }
+.steps p { margin: 0; color: var(--muted); font-size: 0.95rem; line-height: 1.45; }
+.steps.compact {
+  gap: 0.45rem;
+  padding-left: 1.1rem;
+}
+.steps.compact li { color: var(--muted); font-size: 0.95rem; }
+.steps.compact strong { display: inline; color: var(--ink); }
+.walkthrough-summary { border-color: rgba(46, 196, 182, 0.35); }
 label { display: block; margin: 0.55rem 0 0.25rem; color: var(--muted); font-size: 0.85rem; }
 input, textarea {
   width: 100%;

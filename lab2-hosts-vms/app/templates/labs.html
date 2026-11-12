@@ -5,10 +5,21 @@
   <h1>Wake Zone attack labs</h1>
   <p>
     Install the Upwind host sensor first, let it baseline L3 / L4 / L7,
-    then run these modules to generate detections and Function-in-use hits
-    (Pillow ×3, Brotli HTTP2Shell, PyYAML, tarfile) — plus classic AppSec and Webmin.
+    then run these modules to generate detections and Function-in-use hits.
   </p>
+  <p><a class="button" href="/walkthrough">Open full walkthrough</a></p>
 </header>
+
+<section class="panel walkthrough-summary">
+  <h2>Do this in order</h2>
+  <ol class="steps compact">
+    <li><strong>Shell onto this VM</strong> (AWS SSM / Azure SSH / GCP <code>gcloud compute ssh</code>)</li>
+    <li><strong>Install host sensor</strong> from Upwind — wait for L3/L4/L7 baseline</li>
+    <li><strong>Run FiU modules</strong> below → check Function in use</li>
+    <li><strong>SQLi / traversal / cmd / Webmin</strong> → Threats &amp; Stories</li>
+    <li><strong>Destroy</strong> the <code>lab1-3</code> stack when done</li>
+  </ol>
+</section>
 
 <section class="card-list">
   {% for lab in labs %}
@@ -26,6 +37,7 @@
 sam.nguyen@example.com / samwaves
 admin@jayswakezone.example / staffadmin
 
-SQLi bypass example: email  ' OR '1'='1  / password  anything</pre>
+SQLi bypass example: email  ' OR '1'='1  / password  anything
+Webmin: admin / password  (port 10000)</pre>
 </section>
 {% endblock %}

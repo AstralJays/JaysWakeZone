@@ -45,4 +45,6 @@ terraform output lab2_ssh_command
 
 1. Install Upwind **host sensor** (portal / console instructions).
 2. Let it baseline L3/L4/L7.
-3. Attack from `lab2_application_url` (`/labs`) + Webmin.
+3. Open `lab2_application_url` — starts on **`/walkthrough`**, then run modules on `/labs` + Webmin.
+
+Full SA steps: [lab2-hosts-vms/WALKTHROUGH.md](../lab2-hosts-vms/WALKTHROUGH.md) (also rendered in the app).
