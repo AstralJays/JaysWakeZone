@@ -1,6 +1,6 @@
-# GCP stack 2/3 — Cloud Run containers track (Lab 4)
+# GCP Lab 4 — Cloud Run + Juice Shop
 
-Separate from `lab1-3` Lab 3 serverless service (`-lab3` vs `-lab4`).
+Separate from `lab1-3` Lab 3 (`-lab3` serverless demo).
 
 ```bash
 cd infrastructure/gcp/lab4-containers
@@ -9,3 +9,5 @@ cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply
 terraform output lab4_url
 ```
+
+Image: `bkimminich/juice-shop` (Docker Hub). **No GAR.** Install tracer yourself.

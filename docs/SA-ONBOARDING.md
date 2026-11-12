@@ -20,14 +20,16 @@ terraform init && apply && output
 terraform destroy
 ```
 
-## Lab 4 — containers
+## Lab 4 — containers (OWASP Juice Shop)
 
 ```bash
 cd infrastructure/<cloud>/lab4-containers
 terraform init && apply
-# lab4_url → install tracer
+# lab4_url → Juice Shop UI → install tracer
 terraform destroy
 ```
+
+No image build — pulls `bkimminich/juice-shop` from Docker Hub.
 
 ## Lab 5 — Kubernetes
 

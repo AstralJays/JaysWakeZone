@@ -1,2 +1,3 @@
 location    = "eastus"
 name_prefix = "jayswakezone"
+# container_image = "bkimminich/juice-shop:latest"

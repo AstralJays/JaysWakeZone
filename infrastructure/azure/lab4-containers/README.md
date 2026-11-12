@@ -1,4 +1,4 @@
-# Azure stack 2/3 — Container Apps (Lab 4)
+# Azure Lab 4 — Container Apps + Juice Shop
 
 ```bash
 cd infrastructure/azure/lab4-containers
@@ -7,4 +7,4 @@ terraform init && terraform apply
 terraform output lab4_url
 ```
 
-Public Docker Hub image, min replicas 0. Destroy when finished. Install tracer yourself.
+Image: `bkimminich/juice-shop` (Docker Hub). **No ACR.** Install tracer yourself.

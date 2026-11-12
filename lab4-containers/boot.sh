@@ -1,23 +1,5 @@
 #!/bin/bash
-# Stock Docker Hub python:3.9-bullseye — no ECR/ACR/GAR.
-set -euo pipefail
-export JWZ_LAB="${JWZ_LAB:-4-containers}"
-pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
-cat >/tmp/jwz_app.py <<'PY'
-import os
-from flask import Flask
-app = Flask(__name__)
-LAB = os.environ.get("JWZ_LAB", "4-containers")
-
-@app.route("/")
-def index():
-    return {"status": "running", "demo": "cve-detection", "lab": LAB}
-
-@app.route("/health")
-def health():
-    return {"ok": True}
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
-PY
-exec python /tmp/jwz_app.py
+# Unused by current Lab 4 (OWASP Juice Shop image has its own entrypoint).
+# Kept only as a historical stub — do not wire into Terraform.
+echo "Lab 4 uses bkimminich/juice-shop — see README.md"
+exit 0

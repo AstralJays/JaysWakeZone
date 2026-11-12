@@ -1,4 +1,4 @@
-# Stack 2/3 — ECS Fargate. ALB costs ~hourly — destroy when done.
+# Lab 4 — Juice Shop on ECS Fargate. ALB costs ~hourly — destroy when done.
 aws_region  = "us-east-1"
 name_prefix = "jayswakezone"
-# container_image = "python:3.9-bullseye"
+# container_image = "bkimminich/juice-shop:latest"

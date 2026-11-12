@@ -1,5 +1,6 @@
-# Stack 2 of 3 — Cloud Run containers track (Lab 4)
-# Distinct from lab1-3 Lab 3 serverless service. Scale-to-zero friendly.
+# Stack 2 of 3 — Cloud Run (Lab 4)
+# Public OWASP Juice Shop — no GAR / no build.
+# Distinct from lab1-3 Lab 3 serverless (Lambda-style) Cloud Run.
 
 terraform {
   required_version = ">= 1.5.0"
@@ -31,12 +32,14 @@ variable "name_prefix" {
 }
 
 variable "container_image" {
-  type    = string
-  default = "docker.io/library/python:3.9-bullseye"
+  type        = string
+  default     = "docker.io/bkimminich/juice-shop:latest"
+  description = "Public Docker Hub image (OWASP Juice Shop)."
 }
 
-locals {
-  boot = file("${path.module}/../../../lab4-containers/boot.sh")
+variable "container_port" {
+  type    = number
+  default = 3000
 }
 
 resource "google_cloud_run_v2_service" "lab4" {
@@ -46,24 +49,14 @@ resource "google_cloud_run_v2_service" "lab4" {
 
   template {
     containers {
-      image   = var.container_image
-      command = ["bash", "-c"]
-      args    = [local.boot]
-      env {
-        name  = "JWZ_LAB"
-        value = "4-containers"
-      }
-      env {
-        name  = "PORT"
-        value = "8080"
-      }
+      image = var.container_image
       ports {
-        container_port = 8080
+        container_port = var.container_port
       }
       resources {
         limits = {
           cpu    = "1"
-          memory = "512Mi"
+          memory = "1Gi"
         }
       }
     }
@@ -89,10 +82,14 @@ resource "google_cloud_run_v2_service_iam_member" "lab4_public" {
 }
 
 output "lab4_url" {
-  description = "Cloud Run URL — install tracer yourself"
+  description = "OWASP Juice Shop — install tracer yourself"
   value       = google_cloud_run_v2_service.lab4.uri
 }
 
 output "lab4_service_name" {
   value = google_cloud_run_v2_service.lab4.name
+}
+
+output "lab4_image" {
+  value = var.container_image
 }

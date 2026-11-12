@@ -1,3 +1,4 @@
 project_id  = "YOUR_GCP_PROJECT"
 region      = "us-central1"
 name_prefix = "jayswakezone"
+# container_image = "docker.io/bkimminich/juice-shop:latest"

@@ -5,7 +5,7 @@ Per cloud, **three Terraform folders** that match lab numbers:
 | Folder | Labs | Platforms |
 |--------|------|-----------|
 | `infrastructure/<cloud>/lab1-3/` | 1 Storage · 2 VM and Hosts · 3 Serverless | buckets · VM · Lambda/App Service/Cloud Run |
-| `infrastructure/<cloud>/lab4-containers/` | 4 Managed containers | ECS Fargate · ACA · Cloud Run |
+| `infrastructure/<cloud>/lab4-containers/` | 4 Juice Shop (public image) | ECS Fargate · ACA · Cloud Run |
 | `infrastructure/<cloud>/lab5-kubernetes/` | 5 Kubernetes | EKS · AKS · GKE |
 
 ## Apps

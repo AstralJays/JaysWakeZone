@@ -1,5 +1,5 @@
 # Stack 2 of 3 — Azure Container Apps (Lab 4)
-# Public Docker Hub image — no ACR. Consumption plan can scale toward zero.
+# Public OWASP Juice Shop — no ACR / no build.
 
 terraform {
   required_version = ">= 1.5.0"
@@ -30,12 +30,14 @@ variable "name_prefix" {
 }
 
 variable "container_image" {
-  type    = string
-  default = "python:3.9-bullseye"
+  type        = string
+  default     = "bkimminich/juice-shop:latest"
+  description = "Public Docker Hub image (OWASP Juice Shop)."
 }
 
-locals {
-  boot = file("${path.module}/../../../lab4-containers/boot.sh")
+variable "container_port" {
+  type    = number
+  default = 3000
 }
 
 resource "random_string" "suffix" {
@@ -80,27 +82,16 @@ resource "azurerm_container_app" "lab4" {
     max_replicas = 2
 
     container {
-      name    = "jwz"
-      image   = var.container_image
-      cpu     = 0.25
-      memory  = "0.5Gi"
-      command = ["bash", "-c"]
-      args    = [local.boot]
-
-      env {
-        name  = "JWZ_LAB"
-        value = "4-containers"
-      }
-      env {
-        name  = "PORT"
-        value = "8080"
-      }
+      name   = "juice-shop"
+      image  = var.container_image
+      cpu    = 0.5
+      memory = "1Gi"
     }
   }
 
   ingress {
     external_enabled = true
-    target_port      = 8080
+    target_port      = var.container_port
     transport        = "auto"
 
     traffic_weight {
@@ -116,10 +107,14 @@ resource "azurerm_container_app" "lab4" {
 }
 
 output "lab4_url" {
-  description = "Container App URL — install tracer yourself"
+  description = "OWASP Juice Shop — install tracer yourself"
   value       = "https://${azurerm_container_app.lab4.ingress[0].fqdn}"
 }
 
 output "lab4_name" {
   value = azurerm_container_app.lab4.name
+}
+
+output "lab4_image" {
+  value = var.container_image
 }

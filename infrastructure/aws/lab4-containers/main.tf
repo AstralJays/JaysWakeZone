@@ -1,5 +1,5 @@
 # Stack 2 of 3 — ECS Fargate + ALB (Lab 4)
-# Public Docker Hub image — no ECR. Default VPC (no NAT) to keep cost down.
+# Public OWASP Juice Shop image — no ECR / no build.
 # Destroy promptly — ALB has hourly cost.
 
 terraform {
@@ -28,8 +28,14 @@ variable "name_prefix" {
 }
 
 variable "container_image" {
-  type    = string
-  default = "python:3.9-bullseye"
+  type        = string
+  default     = "bkimminich/juice-shop:latest"
+  description = "Public Docker Hub image (OWASP Juice Shop)."
+}
+
+variable "container_port" {
+  type    = number
+  default = 3000
 }
 
 provider "aws" {
@@ -46,10 +52,6 @@ data "aws_subnets" "default" {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
   }
-}
-
-locals {
-  boot = file("${path.module}/../../../lab4-containers/boot.sh")
 }
 
 resource "aws_cloudwatch_log_group" "lab4" {
@@ -94,22 +96,17 @@ resource "aws_ecs_task_definition" "lab4" {
   family                   = "${var.name_prefix}-lab4"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "512"
+  memory                   = "1024"
   execution_role_arn       = aws_iam_role.ecs_execution.arn
 
   container_definitions = jsonencode([{
-    name      = "jwz"
+    name      = "juice-shop"
     image     = var.container_image
     essential = true
-    command   = ["bash", "-c", local.boot]
-    environment = [
-      { name = "JWZ_LAB", value = "4-containers" },
-      { name = "PORT", value = "8080" },
-    ]
     portMappings = [{
-      containerPort = 8080
-      hostPort      = 8080
+      containerPort = var.container_port
+      hostPort      = var.container_port
       protocol      = "tcp"
     }]
     logConfiguration = {
@@ -117,7 +114,7 @@ resource "aws_ecs_task_definition" "lab4" {
       options = {
         "awslogs-group"         = aws_cloudwatch_log_group.lab4.name
         "awslogs-region"        = var.aws_region
-        "awslogs-stream-prefix" = "jwz"
+        "awslogs-stream-prefix" = "juice"
       }
     }
   }])
@@ -147,8 +144,8 @@ resource "aws_security_group" "tasks" {
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    from_port       = 8080
-    to_port         = 8080
+    from_port       = var.container_port
+    to_port         = var.container_port
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
@@ -176,13 +173,13 @@ resource "aws_lb" "lab4" {
 
 resource "aws_lb_target_group" "lab4" {
   name        = "${var.name_prefix}-lab4"
-  port        = 8080
+  port        = var.container_port
   protocol    = "HTTP"
   vpc_id      = data.aws_vpc.default.id
   target_type = "ip"
 
   health_check {
-    path                = "/health"
+    path                = "/"
     healthy_threshold   = 2
     unhealthy_threshold = 5
     timeout             = 10
@@ -217,18 +214,22 @@ resource "aws_ecs_service" "lab4" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.lab4.arn
-    container_name   = "jwz"
-    container_port   = 8080
+    container_name   = "juice-shop"
+    container_port   = var.container_port
   }
 
   depends_on = [aws_lb_listener.lab4]
 }
 
 output "lab4_url" {
-  description = "ECS service via ALB — install tracer yourself"
+  description = "OWASP Juice Shop via ALB - install tracer yourself"
   value       = "http://${aws_lb.lab4.dns_name}"
 }
 
 output "lab4_cluster" {
   value = aws_ecs_cluster.lab4.name
+}
+
+output "lab4_image" {
+  value = var.container_image
 }

@@ -1,4 +1,4 @@
-# AWS stack 2/3 — ECS Fargate (Lab 4)
+# AWS Lab 4 — ECS Fargate + Juice Shop
 
 ```bash
 cd infrastructure/aws/lab4-containers
@@ -7,5 +7,5 @@ terraform init && terraform apply
 terraform output lab4_url
 ```
 
-Public `python:3.9-bullseye` + boot script (no ECR). Uses **default VPC** (no NAT).  
-**ALB has hourly cost** — `terraform destroy` when finished. Install Upwind tracer yourself.
+Image: `bkimminich/juice-shop` (Docker Hub). **No ECR.**  
+ALB is hourly — destroy when done. Install Upwind tracer yourself.
