@@ -1,8 +1,9 @@
-# Azure stack 3/3 — AKS (Lab 5)
+# GCP stack 3/3 — GKE (Lab 5)
 
 ```bash
-cd infrastructure/azure/kubernetes
+cd infrastructure/gcp/lab5-kubernetes
 cp terraform.tfvars.example terraform.tfvars
+# set project_id
 terraform init && terraform apply
 terraform output
 ```

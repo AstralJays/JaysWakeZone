@@ -136,7 +136,7 @@ resource "aws_eks_cluster" "lab5" {
 
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "kubernetes"
+    Stack   = "lab5-kubernetes"
     Lab     = "5"
   }
 }

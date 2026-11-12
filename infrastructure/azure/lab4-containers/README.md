@@ -1,7 +1,7 @@
 # Azure stack 2/3 — Container Apps (Lab 4)
 
 ```bash
-cd infrastructure/azure/containers
+cd infrastructure/azure/lab4-containers
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply
 terraform output lab4_url

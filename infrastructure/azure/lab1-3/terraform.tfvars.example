@@ -1,4 +1,4 @@
-# Stack 1/3 — Labs 1–3 only. Independent of ../containers and ../kubernetes.
+# Labs 1–3 only. Independent of ../lab4-containers and ../lab5-kubernetes.
 
 location    = "eastus"
 name_prefix = "jayswakezone"

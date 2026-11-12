@@ -117,7 +117,7 @@ resource "google_storage_bucket" "lab1" {
 
   labels = {
     project      = "jayswakezone"
-    stack        = "labs-1-3"
+    stack        = "lab1-3"
     lab          = "1"
     cspm_loop    = each.value.cspm_loop
     demo_finding = "public-gcs-bucket"
@@ -189,7 +189,7 @@ resource "google_compute_instance" "lab2" {
 
   labels = {
     project = "jayswakezone"
-    stack   = "labs-1-3"
+    stack   = "lab1-3"
     lab     = "2"
     track   = "vm-and-hosts"
   }
@@ -225,7 +225,7 @@ resource "google_cloud_run_v2_service" "lab3" {
 
   labels = {
     project = "jayswakezone"
-    stack   = "labs-1-3"
+    stack   = "lab1-3"
     lab     = "3"
   }
 }

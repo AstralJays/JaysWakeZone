@@ -8,68 +8,70 @@
 <p align="center">
   <a href="https://github.com/AstralJays/JaysWakeZone"><img src="https://img.shields.io/badge/org-AstralJays-24292f.svg?logo=github" alt="AstralJays" /></a>
   <img src="https://img.shields.io/badge/cloud-AWS%20%7C%20Azure%20%7C%20GCP-success.svg" alt="Clouds" />
-  <img src="https://img.shields.io/badge/stacks-3%20per%20cloud-informational.svg" alt="Stacks" />
+  <img src="https://img.shields.io/badge/stacks-lab1--3%20%7C%20lab4%20%7C%20lab5-informational.svg" alt="Stacks" />
 </p>
 
 ---
 
 > [!CAUTION]
 > **Intentionally vulnerable — do not use in production.**  
-> Sandbox accounts only. Destroy each stack when finished — especially Kubernetes.
+> Sandbox accounts only. Destroy each stack when finished — especially Lab 5.
 
-## Three independent stacks (per cloud)
-
-| Stack | Path | Apps / platforms | Cost |
-|-------|------|------------------|------|
-| **1 — Labs 1–3** | `…/labs-1-3/` | Storage · VM and Hosts · Serverless | Day-1 default |
-| **2 — Containers** | `…/containers/` | ECS Fargate \| ACA \| Cloud Run | Opt-in (ALB on AWS) |
-| **3 — Kubernetes** | `…/kubernetes/` | EKS \| AKS \| GKE + Flask workload | Last — destroy ASAP |
+## Infrastructure layout (one cloud → three applies)
 
 ```text
 infrastructure/<aws|azure|gcp>/
-  labs-1-3/     ← onboarding day
-  containers/   ← Lab 4 apps live
-  kubernetes/   ← Lab 5 apps live
+  lab1-3/              ← Labs 1 + 2 + 3 (day-1)
+  lab4-containers/     ← Lab 4 only
+  lab5-kubernetes/     ← Lab 5 only
 ```
 
-## Grab and go (stack 1)
+| Folder | Labs | What you get |
+|--------|------|--------------|
+| `lab1-3/` | **1** Storage · **2** VM and Hosts · **3** Serverless | Day-1 onboarding |
+| `lab4-containers/` | **4** Managed containers | ECS Fargate \| ACA \| Cloud Run |
+| `lab5-kubernetes/` | **5** Kubernetes | EKS \| AKS \| GKE |
+
+Each folder is its **own** Terraform state — apply/destroy independently.
+
+## Grab and go (Lab 1–3)
 
 ```bash
 git clone https://github.com/<YOU>/JaysWakeZone.git
-cd JaysWakeZone/infrastructure/aws/labs-1-3   # or azure|gcp
+cd JaysWakeZone/infrastructure/aws/lab1-3   # or azure|gcp
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply && terraform output
 ```
 
 Azure: set `ssh_public_key`. GCP: set `project_id`.
 
-## What’s deployed
-
-| Lab | App | Stack |
-|-----|-----|-------|
-| **1** Storage | Two public PII stores (`lab1-public-data/`) | 1 |
-| **2** VM and Hosts | DVWA-lite + Webmin (`lab2-hosts-vms/`) | 1 |
-| **3** Serverless | Lambda zip / App Service / Cloud Run (`lab3-serverless/`) | 1 |
-| **4** Containers | Flask on `python:3.9-bullseye` (`lab4-containers/`) | 2 |
-| **5** Kubernetes | Same Flask via Deployment+LB (`lab5-kubernetes/`) | 3 |
-
-All container workloads pull **public Docker Hub** — no ECR/ACR/GAR push.
-
-### Stack 2 / 3
+## Later labs
 
 ```bash
-cd infrastructure/<cloud>/containers   # or kubernetes
-cp terraform.tfvars.example terraform.tfvars
-terraform init && terraform apply
-terraform output   # lab4_url or lab5_url
+cd infrastructure/<cloud>/lab4-containers
+terraform init && terraform apply   # → lab4_url
+
+cd infrastructure/<cloud>/lab5-kubernetes
+terraform init && terraform apply   # → lab5_url  (destroy ASAP)
 ```
+
+## Apps in the repo
+
+| Lab | Code |
+|-----|------|
+| 1 | `lab1-public-data/` |
+| 2 | `lab2-hosts-vms/` |
+| 3 | `lab3-serverless/` |
+| 4 | `lab4-containers/` |
+| 5 | `lab5-kubernetes/` |
+
+Public Docker Hub only for container/K8s workloads — no ECR/ACR/GAR.
 
 ## Cost hygiene
 
-- Onboarding = **stack 1 only**.
-- Stack 2 AWS includes an ALB (hourly) — destroy when done.
-- Stack 3 pays for control plane + node — never leave overnight without intent.
-- Each stack has its own state → destroy independently.
+- Day-1 = **`lab1-3/` only**.
+- Lab 4 AWS includes an ALB — destroy when done.
+- Lab 5 = control plane + node — never leave overnight without intent.
 
 ## Before labs
 

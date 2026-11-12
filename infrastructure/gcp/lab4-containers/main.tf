@@ -1,5 +1,5 @@
 # Stack 2 of 3 — Cloud Run containers track (Lab 4)
-# Distinct from labs-1-3 Lab 3 serverless service. Scale-to-zero friendly.
+# Distinct from lab1-3 Lab 3 serverless service. Scale-to-zero friendly.
 
 terraform {
   required_version = ">= 1.5.0"
@@ -75,7 +75,7 @@ resource "google_cloud_run_v2_service" "lab4" {
 
   labels = {
     project = "jayswakezone"
-    stack   = "containers"
+    stack   = "lab4-containers"
     lab     = "4"
   }
 }

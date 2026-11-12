@@ -71,7 +71,7 @@ resource "azurerm_resource_group" "lab5" {
   location = var.location
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "kubernetes"
+    Stack   = "lab5-kubernetes"
     Lab     = "5"
   }
 }

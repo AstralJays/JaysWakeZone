@@ -1,7 +1,7 @@
 # AWS stack 3/3 — EKS (Lab 5)
 
 ```bash
-cd infrastructure/aws/kubernetes
+cd infrastructure/aws/lab5-kubernetes
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply
 terraform output

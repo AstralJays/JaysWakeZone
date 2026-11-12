@@ -111,7 +111,7 @@ resource "azurerm_resource_group" "main" {
   location = var.location
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "labs-1-3"
+    Stack   = "lab1-3"
   }
 }
 
@@ -135,7 +135,7 @@ resource "azurerm_storage_account" "lab1" {
 
   tags = {
     Project     = "JaysWakeZone"
-    Stack       = "labs-1-3"
+    Stack       = "lab1-3"
     Lab         = "1"
     CspmLoop    = each.value.cspm_loop
     DemoFinding = "public-blob-container"
@@ -273,7 +273,7 @@ resource "azurerm_linux_virtual_machine" "lab2" {
 
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "labs-1-3"
+    Stack   = "lab1-3"
     Lab     = "2"
     Track   = "VM-and-Hosts"
   }
@@ -296,7 +296,7 @@ resource "azurerm_service_plan" "lab3" {
 
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "labs-1-3"
+    Stack   = "lab1-3"
     Lab     = "3"
   }
 }
@@ -323,7 +323,7 @@ resource "azurerm_linux_web_app" "lab3" {
 
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "labs-1-3"
+    Stack   = "lab1-3"
     Lab     = "3"
     Demo    = "serverless-tracer-candidate"
   }

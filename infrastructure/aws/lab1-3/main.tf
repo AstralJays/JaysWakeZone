@@ -128,7 +128,7 @@ resource "aws_s3_bucket" "lab1" {
   tags = {
     Name        = "${var.name_prefix}-${each.value.suffix}"
     Project     = "JaysWakeZone"
-    Stack       = "labs-1-3"
+    Stack       = "lab1-3"
     Lab         = "1"
     CspmLoop    = each.value.cspm_loop
     DemoFinding = "public-s3-bucket"
@@ -241,7 +241,7 @@ resource "aws_instance" "lab2" {
   tags = {
     Name    = "${var.name_prefix}-lab2"
     Project = "JaysWakeZone"
-    Stack   = "labs-1-3"
+    Stack   = "lab1-3"
     Lab     = "2"
     Track   = "VM-and-Hosts"
   }
@@ -269,7 +269,7 @@ resource "aws_iam_role" "lab3" {
 
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "labs-1-3"
+    Stack   = "lab1-3"
     Lab     = "3"
   }
 }
@@ -291,7 +291,7 @@ resource "aws_lambda_function" "lab3" {
 
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "labs-1-3"
+    Stack   = "lab1-3"
     Lab     = "3"
     Demo    = "serverless-tracer-candidate"
   }

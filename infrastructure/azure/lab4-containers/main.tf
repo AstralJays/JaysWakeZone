@@ -49,7 +49,7 @@ resource "azurerm_resource_group" "lab4" {
   location = var.location
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "containers"
+    Stack   = "lab4-containers"
     Lab     = "4"
   }
 }

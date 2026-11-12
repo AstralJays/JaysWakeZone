@@ -1,12 +1,12 @@
 # JaysWakeZone ↔ SA Surf School
 
-Three **independent** Terraform stacks per cloud. Apps are wired for all five labs.
+Per cloud, **three Terraform folders** that match lab numbers:
 
-| Stack | Dir | Labs | Platforms |
-|-------|-----|------|-----------|
-| 1 | `labs-1-3/` | 1 Storage · 2 VM and Hosts · 3 Serverless | S3/Blob/GCS · EC2/Azure VM/GCE · Lambda/App Service/Cloud Run |
-| 2 | `containers/` | 4 Managed containers | ECS Fargate · ACA · Cloud Run |
-| 3 | `kubernetes/` | 5 Kubernetes | EKS · AKS · GKE |
+| Folder | Labs | Platforms |
+|--------|------|-----------|
+| `infrastructure/<cloud>/lab1-3/` | 1 Storage · 2 VM and Hosts · 3 Serverless | buckets · VM · Lambda/App Service/Cloud Run |
+| `infrastructure/<cloud>/lab4-containers/` | 4 Managed containers | ECS Fargate · ACA · Cloud Run |
+| `infrastructure/<cloud>/lab5-kubernetes/` | 5 Kubernetes | EKS · AKS · GKE |
 
 ## Apps
 
@@ -15,11 +15,11 @@ Three **independent** Terraform stacks per cloud. Apps are wired for all five la
 | 1 | `lab1-public-data/` |
 | 2 | `lab2-hosts-vms/` |
 | 3 | `lab3-serverless/` |
-| 4 | `lab4-containers/` (Flask on public bullseye) |
-| 5 | `lab5-kubernetes/` (+ `manifests/`) |
+| 4 | `lab4-containers/` |
+| 5 | `lab5-kubernetes/` |
 
-SA installs sensors/tracers — never baked into Terraform.
+SA installs sensors/tracers — not in Terraform.
 
 ## Cost
 
-Day-1 = stack 1. Stacks 2–3 opt-in; destroy K8s promptly.
+Day-1 = `lab1-3/` only. Lab 5 destroy promptly.

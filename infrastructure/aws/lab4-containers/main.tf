@@ -67,7 +67,7 @@ resource "aws_ecs_cluster" "lab4" {
 
   tags = {
     Project = "JaysWakeZone"
-    Stack   = "containers"
+    Stack   = "lab4-containers"
     Lab     = "4"
   }
 }

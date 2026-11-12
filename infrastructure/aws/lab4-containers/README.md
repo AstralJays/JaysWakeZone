@@ -1,7 +1,7 @@
 # AWS stack 2/3 — ECS Fargate (Lab 4)
 
 ```bash
-cd infrastructure/aws/containers
+cd infrastructure/aws/lab4-containers
 cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply
 terraform output lab4_url
