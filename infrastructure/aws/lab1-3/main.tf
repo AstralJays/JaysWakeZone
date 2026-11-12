@@ -208,7 +208,7 @@ resource "aws_security_group" "lab2" {
   }
 
   ingress {
-    description = "Webmin (intentional exposure — admin/password)"
+    description = "Webmin intentional exposure (admin/password)"
     from_port   = 10000
     to_port     = 10000
     protocol    = "tcp"
