@@ -15,7 +15,7 @@ systemctl enable --now docker || true
 rm -rf "$APP_DIR"
 git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" "$APP_DIR"
 
-cd "$APP_DIR/lab2-wakezone-app"
+cd "$APP_DIR/lab2-hosts-vms"
 docker compose up -d --build
 
 cat >/etc/systemd/system/jayswakezone.service <<EOF
@@ -27,7 +27,7 @@ Requires=docker.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-WorkingDirectory=${APP_DIR}/lab2-wakezone-app
+WorkingDirectory=${APP_DIR}/lab2-hosts-vms
 ExecStart=/usr/bin/docker compose up -d --build
 ExecStop=/usr/bin/docker compose down
 TimeoutStartSec=0

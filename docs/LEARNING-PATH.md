@@ -13,7 +13,7 @@ Three **independent** Terraform stacks per cloud. Apps are wired for all five la
 | Lab | Code |
 |-----|------|
 | 1 | `lab1-public-data/` |
-| 2 | `lab2-wakezone-app/` |
+| 2 | `lab2-hosts-vms/` |
 | 3 | `lab3-serverless/` |
 | 4 | `lab4-containers/` (Flask on public bullseye) |
 | 5 | `lab5-kubernetes/` (+ `manifests/`) |

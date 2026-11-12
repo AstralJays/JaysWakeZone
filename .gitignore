@@ -20,6 +20,6 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-lab2-wakezone-app/.venv/
+lab2-hosts-vms/.venv/
 attacker.pem
 *.log

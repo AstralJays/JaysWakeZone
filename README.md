@@ -48,7 +48,7 @@ Azure: set `ssh_public_key`. GCP: set `project_id`.
 | Lab | App | Stack |
 |-----|-----|-------|
 | **1** Storage | Two public PII stores (`lab1-public-data/`) | 1 |
-| **2** VM and Hosts | DVWA-lite + Webmin (`lab2-wakezone-app/`) | 1 |
+| **2** VM and Hosts | DVWA-lite + Webmin (`lab2-hosts-vms/`) | 1 |
 | **3** Serverless | Lambda zip / App Service / Cloud Run (`lab3-serverless/`) | 1 |
 | **4** Containers | Flask on `python:3.9-bullseye` (`lab4-containers/`) | 2 |
 | **5** Kubernetes | Same Flask via Deployment+LB (`lab5-kubernetes/`) | 3 |

@@ -13,10 +13,6 @@ Each sink:
 | CVE-2020-14343   | pyyaml==5.3.1     | yaml.load(Loader=Loader)                    |
 | CVE-2007-4559    | stdlib tarfile    | TarFile.extract / extractall                |
 
-Skipped on purpose (don't fit this lab shape):
-  CVE-2022-48565 XXE → needs ancient CPython
-  CVE-2021-29921 / 3177 / 2022-37454 → interpreter/stdlib pins
-  SymPy / Triton → heavy / niche for SA onboarding
 """
 from __future__ import annotations
 
