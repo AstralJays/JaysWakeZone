@@ -6,12 +6,13 @@ region      = "us-central1"
 zone        = "us-central1-a"
 name_prefix = "jayswakezone"
 
+# Onboarding day only (cost-minded)
 enable_lab1 = true   # storage
 enable_lab2 = true   # VM and Hosts
 enable_lab3 = true   # Cloud Run
-enable_lab4 = false  # K8s last / later
+enable_lab4 = false  # managed containers — optional / later
+enable_lab5 = false  # GKE — last
 
-# Lab 2 VM clones this repo for the app. Use your fork URL only if you changed lab2 code.
 repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
 repo_ref = "main"
 

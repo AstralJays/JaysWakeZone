@@ -4,16 +4,17 @@
 location    = "eastus"
 name_prefix = "jayswakezone"
 
+# Onboarding day only (cost-minded)
 enable_lab1 = true   # storage
 enable_lab2 = true   # VM and Hosts
 enable_lab3 = true   # App Service
-enable_lab4 = false  # K8s last / later
+enable_lab4 = false  # Azure Container Apps — later
+enable_lab5 = false  # AKS — last
 
 admin_username = "azureuser"
 # Required:
 # ssh_public_key = "ssh-rsa AAAA..."
 
-# Lab 2 VM clones this repo for the app. Use your fork URL only if you changed lab2 code.
 repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
 repo_ref = "main"
 

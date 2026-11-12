@@ -33,7 +33,7 @@ variable "name_prefix" {
   default = "jayswakezone"
 }
 
-# Labs 1 + 2 + 3 ship together by default. Lab 4 (K8s) last / later.
+# Labs 1 + 2 + 3 = onboarding day (cost-minded). Lab 4/5 opt-in later.
 variable "enable_lab1" {
   type    = bool
   default = true
@@ -53,7 +53,13 @@ variable "enable_lab3" {
 variable "enable_lab4" {
   type        = bool
   default     = false
-  description = "Planned — GKE. Keep false until lab4-kubernetes lands."
+  description = "Planned — managed containers (optional; Cloud Run already covers much). Keep false for cost."
+}
+
+variable "enable_lab5" {
+  type        = bool
+  default     = false
+  description = "Planned — GKE. Keep false until lab5-kubernetes lands (cost)."
 }
 
 variable "serverless_image" {

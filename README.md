@@ -29,7 +29,7 @@
 6. Done  →  terraform destroy
 ```
 
-You never build or push container images. Terraform pulls public bases / packages zip Lambdas for you.  
+You never build or push container images.  
 **Upwind is not in this repo** — connect the account and install sensors/tracers after apply.
 
 ### AWS
@@ -38,10 +38,7 @@ You never build or push container images. Terraform pulls public bases / package
 git clone https://github.com/<YOU>/JaysWakeZone.git
 cd JaysWakeZone/infrastructure/aws
 cp terraform.tfvars.example terraform.tfvars
-# edit only if you need a non-default region/profile
-terraform init
-terraform apply
-terraform output
+terraform init && terraform apply && terraform output
 ```
 
 ### Azure
@@ -62,34 +59,33 @@ cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply && terraform output
 ```
 
-Defaults ship **Labs 1 + 2 + 3** in that one apply. Lab 4 (K8s) stays off.
-
-If you changed Lab 2 app code in your fork, set `repo_url` in tfvars to your fork URL. Otherwise leave the default.
+**Onboarding day = Labs 1 + 2 + 3 only** (cost-minded). Labs 4–5 stay off.
 
 ## What you get
 
-| Lab | Terraform creates | You do after apply |
-|-----|-------------------|--------------------|
-| **1** Storage | Two public PII stores | CSPM loop: fix one, risk-accept the other |
-| **2** VM and Hosts | Linux VM + DVWA-lite + Webmin | Install **host eBPF sensor**, run `/labs` attacks |
-| **3** Serverless | Lambda / App Service / Cloud Run | Install **tracer**, hit the URL |
-| **4** Kubernetes | — (later) | Keep `enable_lab4 = false` for now |
+| Lab | Terraform creates | Default | You do after apply |
+|-----|-------------------|---------|--------------------|
+| **1** Storage | Two public PII stores | on | CSPM: fix one, risk-accept the other |
+| **2** VM and Hosts | Linux VM + DVWA-lite + Webmin | on | Install **host eBPF sensor**, run `/labs` |
+| **3** Serverless | Lambda / App Service / Cloud Run | on | Install **tracer**, hit the URL |
+| **4** Managed containers | ECS Fargate \| Azure Container Apps | **off** | Tracer on containers *(planned)* |
+| **5** Kubernetes | EKS \| AKS \| GKE | **off** | Cluster sensor *(planned)* |
 
-### Useful outputs
+### Useful outputs (Labs 1–3)
 
 - Lab 1: `lab1_remediate_*` · `lab1_exception_*`
 - Lab 2: `lab2_application_url` · `lab2_webmin_url` (`admin` / `password`) · `lab2_public_ip`
 - Lab 3: `lab3_function_url` (AWS) · `lab3_app_url` (Azure) · `lab3_service_url` (GCP)
 
+## Cost hygiene
+
+- One cloud per SA.
+- Leave `enable_lab4` / `enable_lab5` **false** unless you are on that track.
+- Prefer scale-to-zero platforms when Lab 4 lands; destroy K8s promptly.
+- Always `terraform destroy` when the session ends.
+
 ## Before labs — connect the account
 
-In Upwind, connect the sandbox cloud so CSPM, agentless, DSPM, and activity logs / CDR are on.  
-Then apply. Then sensors.
+In Upwind, connect the sandbox cloud so CSPM, agentless, DSPM, and activity logs / CDR are on.
 
-More detail: [docs/LEARNING-PATH.md](docs/LEARNING-PATH.md) · Facilitator: [docs/SA-ONBOARDING.md](docs/SA-ONBOARDING.md)
-
-## Safety
-
-- Not for production.
-- One cloud per SA.
-- Destroy when the session ends.
+More detail: [docs/LEARNING-PATH.md](docs/LEARNING-PATH.md) · [docs/SA-ONBOARDING.md](docs/SA-ONBOARDING.md)
