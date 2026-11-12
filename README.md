@@ -29,7 +29,7 @@ infrastructure/<aws|azure|gcp>/
 | Folder | Labs | What you get |
 |--------|------|--------------|
 | `lab1-3/` | **1** Storage · **2** VM and Hosts · **3** Serverless | Day-1 onboarding |
-| `lab4-containers/` | **4** Managed containers | ECS Fargate \| ACA \| Cloud Run |
+| `lab4-containers/` | **4** Juice Shop (public image) | ECS Fargate \| ACA \| Cloud Run |
 | `lab5-kubernetes/` | **5** Kubernetes | EKS \| AKS \| GKE |
 
 Each folder is its **own** Terraform state — apply/destroy independently.
@@ -64,7 +64,7 @@ terraform init && terraform apply   # → lab5_url  (destroy ASAP)
 | 1 | `lab1-public-data/` |
 | 2 | `lab2-hosts-vms/` |
 | 3 | `lab3-serverless/` |
-| 4 | `lab4-containers/` |
+| 4 | `lab4-containers/` (Juice Shop image) |
 | 5 | `lab5-kubernetes/` |
 
 Public Docker Hub only for container/K8s workloads — no ECR/ACR/GAR.

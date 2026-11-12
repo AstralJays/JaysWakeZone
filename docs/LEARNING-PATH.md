@@ -15,7 +15,7 @@ Per cloud, **three Terraform folders** that match lab numbers:
 | 1 | `lab1-public-data/` |
 | 2 | `lab2-hosts-vms/` |
 | 3 | `lab3-serverless/` |
-| 4 | `lab4-containers/` |
+| 4 | `lab4-containers/` (Juice Shop) |
 | 5 | `lab5-kubernetes/` |
 
 SA installs sensors/tracers — not in Terraform.
