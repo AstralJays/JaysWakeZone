@@ -42,6 +42,12 @@ variable "serverless_image" {
   description = "Public Docker Hub image — no build/push."
 }
 
+variable "ssh_public_key" {
+  type        = string
+  default     = ""
+  description = "Optional SSH public key (ssh-rsa / ssh-ed25519). If empty, use: gcloud compute ssh"
+}
+
 variable "repo_url" {
   type    = string
   default = "https://github.com/AstralJays/JaysWakeZone.git"
@@ -185,7 +191,10 @@ resource "google_compute_instance" "lab2" {
     access_config {}
   }
 
-  metadata_startup_script = local.startup
+  metadata = merge(
+    { startup-script = local.startup },
+    var.ssh_public_key != "" ? { "ssh-keys" = "ubuntu:${var.ssh_public_key}" } : {},
+  )
 
   labels = {
     project = "jayswakezone"
@@ -193,6 +202,13 @@ resource "google_compute_instance" "lab2" {
     lab     = "2"
     track   = "vm-and-hosts"
   }
+
+  # Allows gcloud compute ssh / OS Login style access for sensor install
+  service_account {
+    scopes = ["cloud-platform"]
+  }
+
+  allow_stopping_for_update = true
 }
 
 # --- Lab 3 — Cloud Run ---
@@ -270,6 +286,11 @@ output "lab2_webmin_credentials" {
 
 output "lab2_public_ip" {
   value = google_compute_instance.lab2.network_interface[0].access_config[0].nat_ip
+}
+
+output "lab2_ssh_command" {
+  description = "Shell for Upwind host sensor install"
+  value       = "gcloud compute ssh ubuntu@${google_compute_instance.lab2.name} --zone ${var.zone} --project ${var.project_id}"
 }
 
 output "lab3_service_name" {

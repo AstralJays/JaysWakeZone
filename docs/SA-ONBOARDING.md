@@ -6,6 +6,17 @@
 cd infrastructure/<aws|azure|gcp>/lab1-3
 cp terraform.tfvars.example terraform.tfvars
 terraform init && apply && output
+```
+
+**Lab 2 host access** (for Upwind sensor): see [HOST-ACCESS.md](HOST-ACCESS.md)
+
+| Cloud | How |
+|-------|-----|
+| AWS | `terraform output lab2_ssm_command` → SSM session |
+| Azure | set `ssh_public_key`, then `lab2_ssh_command` |
+| GCP | `lab2_ssh_command` (`gcloud compute ssh`) |
+
+```bash
 terraform destroy
 ```
 

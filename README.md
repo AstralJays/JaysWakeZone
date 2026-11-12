@@ -43,7 +43,9 @@ cp terraform.tfvars.example terraform.tfvars
 terraform init && terraform apply && terraform output
 ```
 
-Azure: set `ssh_public_key`. GCP: set `project_id`.
+Azure: set `ssh_public_key` (needed for Lab 2 sensor install). GCP: set `project_id`.
+
+**Lab 2 shell (Upwind host sensor):** AWS uses **SSM by default** (`terraform output lab2_ssm_command`). Azure/GCP use SSH / `gcloud compute ssh`. Details: [docs/HOST-ACCESS.md](docs/HOST-ACCESS.md).
 
 ## Later labs
 

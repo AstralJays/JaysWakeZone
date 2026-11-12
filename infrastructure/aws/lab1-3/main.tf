@@ -51,6 +51,12 @@ variable "app_ingress_cidr" {
   default = "0.0.0.0/0"
 }
 
+variable "key_name" {
+  type        = string
+  default     = ""
+  description = "Optional EC2 key pair for SSH. Leave empty to use SSM Session Manager only (recommended for Upwind sensor install)."
+}
+
 variable "repo_url" {
   type    = string
   default = "https://github.com/AstralJays/JaysWakeZone.git"
@@ -104,7 +110,10 @@ locals {
     set -euxo pipefail
     export REPO_URL='${var.repo_url}'
     export REPO_REF='${var.repo_ref}'
-    apt-get update -y && apt-get install -y git curl ca-certificates
+    apt-get update -y && apt-get install -y git curl ca-certificates snapd
+    # SSM Session Manager (Upwind sensor install without SSH keys)
+    snap install amazon-ssm-agent --classic || true
+    systemctl enable --now snap.amazon-ssm-agent.amazon-ssm-agent.service || true
     git clone --depth 1 --branch "$REPO_REF" "$REPO_URL" /tmp/jwz
     chmod +x /tmp/jwz/scripts/install-app.sh
     /tmp/jwz/scripts/install-app.sh
@@ -225,12 +234,43 @@ resource "aws_security_group" "lab2" {
   tags = { Name = "${var.name_prefix}-lab2-sg" }
 }
 
+resource "aws_iam_role" "lab2" {
+  name = "${var.name_prefix}-lab2-ec2"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+    }]
+  })
+
+  tags = {
+    Project = "JaysWakeZone"
+    Lab     = "2"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "lab2_ssm" {
+  role       = aws_iam_role.lab2.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "lab2" {
+  name = "${var.name_prefix}-lab2-ec2"
+  role = aws_iam_role.lab2.name
+}
+
 resource "aws_instance" "lab2" {
   ami                         = data.aws_ami.ubuntu.id
   instance_type               = var.instance_type
   vpc_security_group_ids      = [aws_security_group.lab2.id]
+  iam_instance_profile        = aws_iam_instance_profile.lab2.name
+  key_name                    = var.key_name != "" ? var.key_name : null
   user_data                   = local.user_data
   user_data_replace_on_change = true
+  associate_public_ip_address = true
 
   root_block_device {
     volume_size           = var.root_volume_gb
@@ -346,6 +386,19 @@ output "lab2_webmin_credentials" {
 
 output "lab2_public_ip" {
   value = aws_instance.lab2.public_ip
+}
+
+output "lab2_instance_id" {
+  value = aws_instance.lab2.id
+}
+
+output "lab2_ssm_command" {
+  description = "Preferred shell for Upwind host sensor install (no SSH key needed)"
+  value       = "aws ssm start-session --target ${aws_instance.lab2.id} --region ${var.aws_region}"
+}
+
+output "lab2_ssh_hint" {
+  value = var.key_name != "" ? "ssh -i <key.pem> ubuntu@${aws_instance.lab2.public_ip}" : "SSM only (set key_name in tfvars for SSH)"
 }
 
 output "lab3_function_name" {

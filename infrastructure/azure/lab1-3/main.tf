@@ -363,6 +363,11 @@ output "lab2_public_ip" {
   value = azurerm_public_ip.lab2.ip_address
 }
 
+output "lab2_ssh_command" {
+  description = "Shell for Upwind host sensor install (requires ssh_public_key in tfvars)"
+  value       = "ssh ${var.admin_username}@${azurerm_public_ip.lab2.ip_address}"
+}
+
 output "lab3_app_name" {
   value = azurerm_linux_web_app.lab3.name
 }

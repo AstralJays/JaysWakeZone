@@ -9,7 +9,11 @@ name_prefix    = "jayswakezone"
 instance_type  = "t3.large"
 root_volume_gb = 40
 
+# Host access for Upwind sensor install:
+# Default = SSM (no key). Optional SSH:
+# key_name = "my-ec2-keypair"
+
 repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
 repo_ref = "main"
 
-# Do NOT put Upwind credentials here — install sensors yourself after apply.
+# Do NOT put Upwind credentials here - install sensors yourself after apply.
