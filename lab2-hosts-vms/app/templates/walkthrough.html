@@ -1,74 +1,59 @@
 {% extends "base.html" %}
 {% block content %}
 <header class="hero">
-  <p class="eyebrow">Lab 2 · VM and Hosts</p>
-  <h1>Walkthrough</h1>
-  <p>
-    Follow these steps in order. This app is intentionally vulnerable —
-    the goal is Upwind detections, not “hacking for fun.”
-  </p>
+  <p class="eyebrow">Lab 2 · how-to</p>
+  <h1>{{ preamble.title }}</h1>
+  <p>{{ preamble.intro }}</p>
+  <p><a class="button" href="/labs">Go to attack list</a></p>
 </header>
 
-<ol class="steps">
-  <li>
-    <strong>Connect the cloud account</strong>
-    <p>In Upwind, onboard this sandbox cloud so CSPM, agentless, DSPM, and activity logs are on.</p>
-  </li>
-  <li>
-    <strong>Get a shell on this VM</strong>
-    <p>
-      AWS: <code>aws ssm start-session</code> (see terraform output <code>lab2_ssm_command</code>).<br />
-      Azure: SSH with the key from tfvars.<br />
-      GCP: <code>gcloud compute ssh</code>.
-    </p>
-  </li>
-  <li>
-    <strong>Install the Upwind host sensor</strong>
-    <p>
-      Paste the install command from the Upwind console / portal.
-      Wait until this host shows up and has baselined <strong>L3 / L4 / L7</strong>
-      before generating attack traffic.
-    </p>
-  </li>
-  <li>
-    <strong>Run Function-in-use modules</strong>
-    <p>
-      Open <a href="/labs">All labs</a> and hit the FiU cards (Pillow ×3, Brotli, PyYAML, tarfile).
-      In Upwind, check Vuln Management → <strong>Function in use</strong>.
-    </p>
-  </li>
-  <li>
-    <strong>Run classic AppSec + Webmin</strong>
-    <p>
-      SQLi login, path traversal, and command injection from the lab list.
-      Then open Webmin on port <code>10000</code> with <code>admin</code> / <code>password</code>
-      for an exposed management-plane story.
-    </p>
-  </li>
-  <li>
-    <strong>Investigate in Upwind</strong>
-    <p>
-      Threats / Stories, runtime map, and FiU findings.
-      Tie evidence back to this host and the modules you ran.
-    </p>
-  </li>
-  <li>
-    <strong>Tear down</strong>
-    <p><code>terraform destroy</code> in <code>infrastructure/&lt;cloud&gt;/lab1-3</code> when finished.</p>
-  </li>
-</ol>
-
-<section class="panel">
-  <h2>Quick reference</h2>
-  <pre>App:     this page /labs
-Webmin:  https://&lt;host&gt;:10000   admin / password
-SQLi:    email  ' OR '1'='1     password  anything
-
-Demo users:
-  jordan.lee@example.com / jordanwaves
-  sam.nguyen@example.com / samwaves
-  admin@jayswakezone.example / staffadmin</pre>
+<section class="panel walkthrough-summary">
+  <h2>Session order</h2>
+  <ol class="steps compact">
+    {% for step in preamble.order %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ol>
 </section>
 
-<p class="hint">Repo copy of these steps: <code>lab2-hosts-vms/WALKTHROUGH.md</code></p>
+<section class="panel">
+  <h2>Host access (sensor install)</h2>
+  <pre>AWS:   aws ssm start-session --target &lt;lab2_instance_id&gt;
+Azure: ssh azureuser@&lt;lab2_public_ip&gt;   (ssh_public_key in tfvars)
+GCP:   gcloud compute ssh ubuntu@&lt;name&gt; --zone &lt;zone&gt;
+
+Then paste the Upwind host sensor install command from the console.
+Docs: docs/HOST-ACCESS.md</pre>
+</section>
+
+{% for lab in labs %}
+{% set guide = attacks.get(lab.slug) %}
+<section class="panel attack-guide" id="{{ lab.slug }}">
+  <p class="eyebrow">{{ lab.ref }}</p>
+  <h2><a href="/labs/{{ lab.slug }}">{{ lab.title }}</a></h2>
+  {% if guide %}
+  <p><strong>Goal:</strong> {{ guide.goal }}</p>
+  <p class="hint"><strong>Upwind:</strong> {{ guide.upwind }}</p>
+  <ol class="steps compact">
+    {% for step in guide.steps %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ol>
+  <p class="hint"><strong>Payload / input:</strong> <code>{{ guide.payload }}</code></p>
+  {% else %}
+  <p class="hint">Open the lab page for the interactive form.</p>
+  {% endif %}
+  <p><a class="button" href="/labs/{{ lab.slug }}">Open lab</a></p>
+</section>
+{% endfor %}
+
+<section class="panel">
+  <h2>Demo accounts</h2>
+  <pre>jordan.lee@example.com / jordanwaves
+sam.nguyen@example.com / samwaves
+admin@jayswakezone.example / staffadmin
+
+SQLi bypass:  email  ' OR '1'='1   /  password  anything
+Webmin:       admin / password  (:10000)</pre>
+</section>
 {% endblock %}

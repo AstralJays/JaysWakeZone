@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import fiu
+import walkthrough as wt
 from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -144,7 +145,14 @@ def _user(request: Request) -> dict | None:
 
 
 def _ctx(request: Request, **extra: Any) -> dict:
-    return {"request": request, "user": _user(request), "labs": LABS, **extra}
+    return {
+        "request": request,
+        "user": _user(request),
+        "labs": LABS,
+        "preamble": wt.PREAMBLE,
+        "attacks": wt.ATTACKS,
+        **extra,
+    }
 
 
 def _lab(slug: str) -> dict | None:
@@ -174,7 +182,8 @@ def home():
 @app.get("/walkthrough", response_class=HTMLResponse)
 def walkthrough(request: Request):
     return templates.TemplateResponse(
-        "walkthrough.html", _ctx(request, title="Walkthrough")
+        "walkthrough.html",
+        _ctx(request, title="Walkthrough"),
     )
 
 
@@ -203,7 +212,14 @@ def lab_detail(request: Request, slug: str):
     elif slug in FIU_SLUGS:
         result = fiu.stats()
     return templates.TemplateResponse(
-        "lab.html", _ctx(request, title=lab["title"], lab=lab, result=result)
+        "lab.html",
+        _ctx(
+            request,
+            title=lab["title"],
+            lab=lab,
+            result=result,
+            guide=wt.for_slug(slug),
+        ),
     )
 
 
@@ -307,7 +323,14 @@ def path_traversal(request: Request, name: str = Form("welcome.txt")):
     except Exception as exc:  # noqa: BLE001
         result = {"ok": False, "path": full, "error": str(exc)}
     return templates.TemplateResponse(
-        "lab.html", _ctx(request, title=lab["title"], lab=lab, result=result)
+        "lab.html",
+        _ctx(
+            request,
+            title=lab["title"],
+            lab=lab,
+            result=result,
+            guide=wt.for_slug("path-traversal"),
+        ),
     )
 
 
@@ -329,7 +352,14 @@ def cmd_injection(request: Request, host: str = Form("127.0.0.1")):
     except Exception as exc:  # noqa: BLE001
         result = {"ok": False, "command": cmd, "error": str(exc)}
     return templates.TemplateResponse(
-        "lab.html", _ctx(request, title=lab["title"], lab=lab, result=result)
+        "lab.html",
+        _ctx(
+            request,
+            title=lab["title"],
+            lab=lab,
+            result=result,
+            guide=wt.for_slug("cmd-injection"),
+        ),
     )
 
 
