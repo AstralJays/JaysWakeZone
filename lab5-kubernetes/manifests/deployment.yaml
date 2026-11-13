@@ -1,66 +1,60 @@
-# Reference manifest — Terraform applies equivalent via kubernetes_* resources.
-# Image: public Docker Hub opena2a/dvaa (no private registry).
-# https://hub.docker.com/r/opena2a/dvaa
-# https://github.com/opena2a-org/damn-vulnerable-ai-agent
+# Reference — Terraform applies equivalent via kubernetes_* resources.
+# Publish your image, then set container_image in terraform.tfvars.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jwz-dvaa
+  name: jwz-agent-lab
   labels:
-    app: jwz-dvaa
+    app: jwz-agent-lab
     lab: "5"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: jwz-dvaa
+      app: jwz-agent-lab
   template:
     metadata:
       labels:
-        app: jwz-dvaa
+        app: jwz-agent-lab
     spec:
       containers:
-        - name: dvaa
-          image: opena2a/dvaa:0.9.2
+        - name: app
+          image: YOURUSER/jwz-agent-lab:0.1.0
           imagePullPolicy: IfNotPresent
           env:
-            - name: OPENA2A_TELEMETRY
-              value: "off"
+            - name: PORT
+              value: "8080"
+            - name: OLLAMA_MODEL
+              value: llama3.2
+            # Optional in-cluster Ollama Service:
+            # - name: OLLAMA_BASE_URL
+            #   value: http://ollama:11434/v1
           ports:
-            - name: dashboard
-              containerPort: 9000
+            - name: http
+              containerPort: 8080
           readinessProbe:
             httpGet:
-              path: /
-              port: 9000
-            initialDelaySeconds: 45
-            periodSeconds: 15
-            failureThreshold: 6
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 9000
-            initialDelaySeconds: 90
-            periodSeconds: 30
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
           resources:
             requests:
-              cpu: 500m
-              memory: 1Gi
+              cpu: 100m
+              memory: 256Mi
             limits:
-              cpu: 1500m
-              memory: 3Gi
+              cpu: 500m
+              memory: 512Mi
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: jwz-dvaa
-  labels:
-    app: jwz-dvaa
+  name: jwz-agent-lab
 spec:
   type: LoadBalancer
   selector:
-    app: jwz-dvaa
+    app: jwz-agent-lab
   ports:
-    - name: dashboard
+    - name: http
       port: 80
-      targetPort: 9000
+      targetPort: 8080

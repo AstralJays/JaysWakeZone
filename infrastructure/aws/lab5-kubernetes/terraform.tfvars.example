@@ -1,4 +1,4 @@
-# Stack 3/3 — EKS + DVAA. Control plane + 1× t3.medium — destroy when done.
+# Stack 3/3 — EKS + Agentic API Lab. Destroy when done.
 aws_region  = "us-east-1"
 name_prefix = "jayswakezone"
-# container_image = "opena2a/dvaa:0.9.2"
+container_image = "YOURUSER/jwz-agent-lab:0.1.0"

@@ -31,16 +31,20 @@ terraform destroy
 
 No image build — pulls `bkimminich/juice-shop` from Docker Hub.
 
-## Lab 5 — Kubernetes (Damn Vulnerable AI Agent)
+## Lab 5 — Kubernetes (Agentic API Lab)
 
 ```bash
+# publish once
+cd lab5-agentic && docker build -t YOURUSER/jwz-agent-lab:0.1.0 . && docker push YOURUSER/jwz-agent-lab:0.1.0
+
 cd infrastructure/<cloud>/lab5-kubernetes
+# set container_image in terraform.tfvars
 terraform init && apply
-# lab5_url → DVAA dashboard → install cluster sensor
+# lab5_url → one-page lab (steps 1–6) → install cluster sensor
 terraform destroy   # do not leave up
 ```
 
-No image build — pulls `opena2a/dvaa:0.9.2` from Docker Hub. Lab/sandbox only.
+Lab/sandbox only. Image is yours on Docker Hub (no ECR/ACR/GAR).
 
 ## Outputs
 

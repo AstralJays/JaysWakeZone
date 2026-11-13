@@ -1,6 +1,6 @@
-# Stack 3 of 3 — EKS + Damn Vulnerable AI Agent (Lab 5)
-# 1× t3.medium node — destroy promptly (control plane + node hours).
-# Image: public Docker Hub opena2a/dvaa (no private registry / no build).
+# Stack 3 of 3 — EKS + JaysWakeZone Agentic API Lab (Lab 5)
+# Publish YOURUSER/jwz-agent-lab then set container_image.
+# 1× t3.small — destroy promptly.
 
 terraform {
   required_version = ">= 1.5.0"
@@ -33,8 +33,8 @@ variable "name_prefix" {
 
 variable "container_image" {
   type        = string
-  description = "Public DVAA image — https://hub.docker.com/r/opena2a/dvaa"
-  default     = "opena2a/dvaa:0.9.2"
+  description = "Docker Hub image you published from lab5-agentic/"
+  default     = "YOURUSER/jwz-agent-lab:0.1.0"
 }
 
 provider "aws" {
@@ -42,7 +42,6 @@ provider "aws" {
   profile = var.aws_profile != "" ? var.aws_profile : null
 }
 
-data "aws_caller_identity" "current" {}
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -153,9 +152,8 @@ resource "aws_eks_node_group" "lab5" {
   node_group_name = "jwz"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = aws_subnet.public[*].id
-  # DVAA runs ~19 agents — 2 GiB nodes OOMs; t3.medium ≈ 4 GiB
-  instance_types = ["t3.medium"]
-  capacity_type  = "ON_DEMAND"
+  instance_types  = ["t3.small"]
+  capacity_type   = "ON_DEMAND"
 
   scaling_config {
     desired_size = 1
@@ -182,65 +180,52 @@ provider "kubernetes" {
 
 resource "kubernetes_deployment" "jwz" {
   metadata {
-    name = "jwz-dvaa"
-    labels = {
-      app = "jwz-dvaa"
-      lab = "5"
-    }
+    name   = "jwz-agent-lab"
+    labels = { app = "jwz-agent-lab", lab = "5" }
   }
 
   spec {
     replicas = 1
     selector {
-      match_labels = { app = "jwz-dvaa" }
+      match_labels = { app = "jwz-agent-lab" }
     }
     template {
       metadata {
-        labels = { app = "jwz-dvaa" }
+        labels = { app = "jwz-agent-lab" }
       }
       spec {
         container {
-          name              = "dvaa"
+          name              = "app"
           image             = var.container_image
           image_pull_policy = "IfNotPresent"
 
           env {
-            name  = "OPENA2A_TELEMETRY"
-            value = "off"
+            name  = "PORT"
+            value = "8080"
           }
 
           port {
-            name           = "dashboard"
-            container_port = 9000
+            name           = "http"
+            container_port = 8080
           }
 
           readiness_probe {
             http_get {
-              path = "/"
-              port = 9000
+              path = "/health"
+              port = 8080
             }
-            initial_delay_seconds = 45
-            period_seconds        = 15
-            failure_threshold     = 6
-          }
-
-          liveness_probe {
-            http_get {
-              path = "/"
-              port = 9000
-            }
-            initial_delay_seconds = 90
-            period_seconds        = 30
+            initial_delay_seconds = 8
+            period_seconds        = 10
           }
 
           resources {
             requests = {
-              cpu    = "500m"
-              memory = "1Gi"
+              cpu    = "100m"
+              memory = "256Mi"
             }
             limits = {
-              cpu    = "1500m"
-              memory = "3Gi"
+              cpu    = "500m"
+              memory = "512Mi"
             }
           }
         }
@@ -251,20 +236,17 @@ resource "kubernetes_deployment" "jwz" {
   depends_on = [aws_eks_node_group.lab5]
 }
 
-# Dashboard only on the LB — agent ports stay in-cluster (port-forward for HMA).
 resource "kubernetes_service" "jwz" {
   metadata {
-    name = "jwz-dvaa"
+    name = "jwz-agent-lab"
   }
   spec {
-    type = "LoadBalancer"
-    selector = {
-      app = "jwz-dvaa"
-    }
+    type     = "LoadBalancer"
+    selector = { app = "jwz-agent-lab" }
     port {
-      name        = "dashboard"
+      name        = "http"
       port        = 80
-      target_port = 9000
+      target_port = 8080
     }
   }
 
@@ -276,15 +258,10 @@ output "lab5_cluster_name" {
 }
 
 output "lab5_url" {
-  description = "DVAA dashboard (intentionally vulnerable — lab only). Install cluster sensor yourself."
+  description = "Agentic API Lab UI — install cluster sensor yourself"
   value       = try("http://${kubernetes_service.jwz.status[0].load_balancer[0].ingress[0].hostname}", "pending-lb")
 }
 
 output "lab5_kubeconfig_hint" {
   value = "aws eks update-kubeconfig --region ${var.aws_region} --name ${aws_eks_cluster.lab5.name}"
-}
-
-output "lab5_port_forward_agents" {
-  description = "Forward agent ports for HackMyAgent / curl against the fleet"
-  value       = "kubectl port-forward deploy/jwz-dvaa 9000:9000 7003:7003"
 }

@@ -1,6 +1,5 @@
-# Stack 3 of 3 — AKS + Damn Vulnerable AI Agent (Lab 5)
-# 1× Standard_B2s (4 GiB) — destroy promptly.
-# Image: public Docker Hub opena2a/dvaa (no private registry / no build).
+# Stack 3 of 3 — AKS + JaysWakeZone Agentic API Lab (Lab 5)
+# Publish YOURUSER/jwz-agent-lab then set container_image.
 
 terraform {
   required_version = ">= 1.5.0"
@@ -36,8 +35,8 @@ variable "name_prefix" {
 
 variable "container_image" {
   type        = string
-  description = "Public DVAA image — https://hub.docker.com/r/opena2a/dvaa"
-  default     = "opena2a/dvaa:0.9.2"
+  description = "Docker Hub image you published from lab5-agentic/"
+  default     = "YOURUSER/jwz-agent-lab:0.1.0"
 }
 
 resource "random_string" "suffix" {
@@ -88,62 +87,52 @@ provider "kubernetes" {
 
 resource "kubernetes_deployment" "jwz" {
   metadata {
-    name   = "jwz-dvaa"
-    labels = { app = "jwz-dvaa", lab = "5" }
+    name   = "jwz-agent-lab"
+    labels = { app = "jwz-agent-lab", lab = "5" }
   }
 
   spec {
     replicas = 1
     selector {
-      match_labels = { app = "jwz-dvaa" }
+      match_labels = { app = "jwz-agent-lab" }
     }
     template {
       metadata {
-        labels = { app = "jwz-dvaa" }
+        labels = { app = "jwz-agent-lab" }
       }
       spec {
         container {
-          name              = "dvaa"
+          name              = "app"
           image             = var.container_image
           image_pull_policy = "IfNotPresent"
 
           env {
-            name  = "OPENA2A_TELEMETRY"
-            value = "off"
+            name  = "PORT"
+            value = "8080"
           }
 
           port {
-            name           = "dashboard"
-            container_port = 9000
+            name           = "http"
+            container_port = 8080
           }
 
           readiness_probe {
             http_get {
-              path = "/"
-              port = 9000
+              path = "/health"
+              port = 8080
             }
-            initial_delay_seconds = 45
-            period_seconds        = 15
-            failure_threshold     = 6
-          }
-
-          liveness_probe {
-            http_get {
-              path = "/"
-              port = 9000
-            }
-            initial_delay_seconds = 90
-            period_seconds        = 30
+            initial_delay_seconds = 8
+            period_seconds        = 10
           }
 
           resources {
             requests = {
-              cpu    = "500m"
-              memory = "1Gi"
+              cpu    = "100m"
+              memory = "256Mi"
             }
             limits = {
-              cpu    = "1500m"
-              memory = "3Gi"
+              cpu    = "500m"
+              memory = "512Mi"
             }
           }
         }
@@ -156,15 +145,15 @@ resource "kubernetes_deployment" "jwz" {
 
 resource "kubernetes_service" "jwz" {
   metadata {
-    name = "jwz-dvaa"
+    name = "jwz-agent-lab"
   }
   spec {
     type     = "LoadBalancer"
-    selector = { app = "jwz-dvaa" }
+    selector = { app = "jwz-agent-lab" }
     port {
-      name        = "dashboard"
+      name        = "http"
       port        = 80
-      target_port = 9000
+      target_port = 8080
     }
   }
 }
@@ -174,15 +163,10 @@ output "lab5_cluster_name" {
 }
 
 output "lab5_url" {
-  description = "DVAA dashboard (intentionally vulnerable — lab only). Install cluster sensor yourself."
+  description = "Agentic API Lab UI — install cluster sensor yourself"
   value       = try("http://${kubernetes_service.jwz.status[0].load_balancer[0].ingress[0].ip}", "pending-lb")
 }
 
 output "lab5_get_credentials" {
   value = "az aks get-credentials --resource-group ${azurerm_resource_group.lab5.name} --name ${azurerm_kubernetes_cluster.lab5.name}"
-}
-
-output "lab5_port_forward_agents" {
-  description = "Forward agent ports for HackMyAgent / curl against the fleet"
-  value       = "kubectl port-forward deploy/jwz-dvaa 9000:9000 7003:7003"
 }
