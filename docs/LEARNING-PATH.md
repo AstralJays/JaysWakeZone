@@ -1,25 +1,25 @@
 # JaysWakeZone ↔ SA Surf School
 
-Per cloud, **three Terraform folders** that match lab numbers:
+Three top-level lab folders; each has `infrastructure/{aws|azure|gcp}/`:
 
 | Folder | Labs | Platforms |
 |--------|------|-----------|
-| `infrastructure/<cloud>/lab1-3/` | 1 Storage · 2 VM and Hosts · 3 Serverless | buckets · VM · Lambda/App Service/Cloud Run |
-| `infrastructure/<cloud>/lab4-containers/` | 4 Juice Shop (public image) | ECS Fargate · ACA · Cloud Run |
-| `infrastructure/<cloud>/lab5-kubernetes/` | 5 Agentic API Lab (your Hub image) | EKS · AKS · GKE |
+| `Lab1-3/` | 1 Storage · 2 VM/Hosts · 3 Serverless | buckets · VM · Lambda/App Service/Cloud Run |
+| `Lab4/` | 4 Juice Shop (public image) | ECS Fargate · ACA · Cloud Run |
+| `Lab5/` | 5 Wakezone AI (your Hub image) + Ollama GPU | EKS · AKS · GKE |
 
 ## Apps
 
 | Lab | Code |
 |-----|------|
-| 1 | `lab1-public-data/` |
-| 2 | `lab2-hosts-vms/` |
-| 3 | `lab3-serverless/` |
-| 4 | `lab4-containers/` (Juice Shop) |
-| 5 | `lab5-agentic/` → Hub image → `lab5-kubernetes/` |
+| 1 | `Lab1-3/lab1-public-data/` |
+| 2 | `Lab1-3/lab2-hosts-vms/` |
+| 3 | `Lab1-3/lab3-serverless/` |
+| 4 | `Lab4/` (Juice Shop) |
+| 5 | `Lab5/` → Hub image → K8s |
 
 SA installs sensors/tracers — not in Terraform.
 
 ## Cost
 
-Day-1 = `lab1-3/` only. Lab 5 destroy promptly.
+Day-1 = `Lab1-3/` only. Lab 5 destroy promptly.

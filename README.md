@@ -2,81 +2,63 @@
 
 <p align="center">
   <strong>Grab-and-go</strong> SA Surf School labs — fork, clone, <code>terraform apply</code>.
-  No image builds. You install Upwind sensors yourself.
+  No image builds for Labs 1–4. You install Upwind sensors yourself.
 </p>
 
 <p align="center">
   <a href="https://github.com/AstralJays/JaysWakeZone"><img src="https://img.shields.io/badge/org-AstralJays-24292f.svg?logo=github" alt="AstralJays" /></a>
   <img src="https://img.shields.io/badge/cloud-AWS%20%7C%20Azure%20%7C%20GCP-success.svg" alt="Clouds" />
-  <img src="https://img.shields.io/badge/stacks-lab1--3%20%7C%20lab4%20%7C%20lab5-informational.svg" alt="Stacks" />
+  <img src="https://img.shields.io/badge/labs-Lab1--3%20%7C%20Lab4%20%7C%20Lab5-informational.svg" alt="Labs" />
 </p>
 
 ---
 
 > [!CAUTION]
 > **Intentionally vulnerable — do not use in production.**  
-> Sandbox accounts only. Destroy each stack when finished — especially Lab 5.
+> Sandbox accounts only. Destroy each stack when finished — especially Lab 5 (GPU).
 
-## Infrastructure layout (one cloud → three applies)
+## Repo layout (three labs)
 
 ```text
-infrastructure/<aws|azure|gcp>/
-  lab1-3/              ← Labs 1 + 2 + 3 (day-1)
-  lab4-containers/     ← Lab 4 only
-  lab5-kubernetes/     ← Lab 5 only
+Lab1-3/     Storage · VM · Serverless
+Lab4/       Abstracted container services (Juice Shop)
+Lab5/       Microservice + AI (Wakezone AI + Ollama GPU)
+docs/       SA notes
 ```
 
-| Folder | Labs | What you get |
-|--------|------|--------------|
-| `lab1-3/` | **1** Storage · **2** VM and Hosts · **3** Serverless | Day-1 onboarding |
-| `lab4-containers/` | **4** Juice Shop (public image) | ECS Fargate \| ACA \| Cloud Run |
-| `lab5-kubernetes/` | **5** WakeBot + Ollama GPU (your Hub image) | EKS \| AKS \| GKE |
+Each lab has its own `infrastructure/{aws|azure|gcp}/` — separate Terraform state.
 
-Each folder is its **own** Terraform state — apply/destroy independently.
+| Folder | What you get |
+|--------|----------------|
+| `Lab1-3/` | **1** Storage · **2** VM/Hosts · **3** Serverless |
+| `Lab4/` | Juice Shop on ECS Fargate \| ACA \| Cloud Run |
+| `Lab5/` | Wakezone AI + in-cluster Ollama on GPU (EKS \| AKS \| GKE) |
 
-## Grab and go (Lab 1–3)
+## Grab and go
 
 ```bash
 git clone https://github.com/<YOU>/JaysWakeZone.git
-cd JaysWakeZone/infrastructure/aws/lab1-3   # or azure|gcp
+cd JaysWakeZone/Lab1-3/infrastructure/aws   # or azure|gcp
 cp terraform.tfvars.example terraform.tfvars
-terraform init && terraform apply && terraform output
+terraform init && terraform apply
 ```
 
-Azure: set `ssh_public_key` (needed for Lab 2 sensor install). GCP: set `project_id`.
-
-**Lab 2 shell (Upwind host sensor):** AWS uses **SSM by default** (`terraform output lab2_ssm_command`). Azure/GCP use SSH / `gcloud compute ssh`. Details: [docs/HOST-ACCESS.md](docs/HOST-ACCESS.md).
-
-## Later labs
+```bash
+cd Lab4/infrastructure/<cloud>
+terraform init && terraform apply   # → lab4_url
+```
 
 ```bash
-cd infrastructure/<cloud>/lab4-containers
-terraform init && terraform apply   # → lab4_url
+# publish Wakezone AI image first
+cd Lab5
+docker build -t YOURUSER/jwz-agent-lab:0.1.0 .
+docker push YOURUSER/jwz-agent-lab:0.1.0
 
-cd infrastructure/<cloud>/lab5-kubernetes
+cd infrastructure/<cloud>
+# set container_image in terraform.tfvars
 terraform init && terraform apply   # → lab5_url  (destroy ASAP)
 ```
 
-## Apps in the repo
+Upwind sensors/tracers are **not** in Terraform — install yourself after apply. Lab 5 nodes are sized for sensor headroom.
 
-| Lab | Code |
-|-----|------|
-| 1 | `lab1-public-data/` |
-| 2 | `lab2-hosts-vms/` |
-| 3 | `lab3-serverless/` |
-| 4 | `lab4-containers/` (Juice Shop image) |
-| 5 | `lab5-agentic/` → build/push Hub image → `lab5-kubernetes/` |
-
-Lab 4 uses public Juice Shop. Lab 5: **you** publish `jwz-agent-lab` from `lab5-agentic/` (still Hub — no ECR/ACR/GAR).
-
-## Cost hygiene
-
-- Day-1 = **`lab1-3/` only**.
-- Lab 4 AWS includes an ALB — destroy when done.
-- Lab 5 = control plane + node — never leave overnight without intent.
-
-## Before labs
-
-Connect the sandbox cloud in Upwind (CSPM · agentless · DSPM · activity logs / CDR).
-
-[docs/LEARNING-PATH.md](docs/LEARNING-PATH.md) · [docs/SA-ONBOARDING.md](docs/SA-ONBOARDING.md)
+See [docs/SA-ONBOARDING.md](docs/SA-ONBOARDING.md).

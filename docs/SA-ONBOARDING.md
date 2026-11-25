@@ -3,7 +3,7 @@
 ## Day-1 — Labs 1–3
 
 ```bash
-cd infrastructure/<aws|azure|gcp>/lab1-3
+cd Lab1-3/infrastructure/<aws|azure|gcp>
 cp terraform.tfvars.example terraform.tfvars
 terraform init && apply && output
 ```
@@ -23,7 +23,7 @@ terraform destroy
 ## Lab 4 — containers (OWASP Juice Shop)
 
 ```bash
-cd infrastructure/<cloud>/lab4-containers
+cd Lab4/infrastructure/<cloud>
 terraform init && apply
 # lab4_url → Juice Shop UI → install tracer
 terraform destroy
@@ -31,16 +31,16 @@ terraform destroy
 
 No image build — pulls `bkimminich/juice-shop` from Docker Hub.
 
-## Lab 5 — Kubernetes (Agentic API Lab)
+## Lab 5 — Kubernetes (Wakezone AI)
 
 ```bash
 # publish once
-cd lab5-agentic && docker build -t YOURUSER/jwz-agent-lab:0.1.0 . && docker push YOURUSER/jwz-agent-lab:0.1.0
+cd Lab5 && docker build -t YOURUSER/jwz-agent-lab:0.1.0 . && docker push YOURUSER/jwz-agent-lab:0.1.0
 
-cd infrastructure/<cloud>/lab5-kubernetes
+cd Lab5/infrastructure/<cloud>
 # set container_image in terraform.tfvars
 terraform init && apply
-# lab5_url → one-page lab (steps 1–6) → install cluster sensor
+# lab5_url → Wakezone AI → install cluster sensor
 terraform destroy   # do not leave up
 ```
 
@@ -50,6 +50,6 @@ Lab/sandbox only. Image is yours on Docker Hub (no ECR/ACR/GAR).
 
 | Folder | Outputs |
 |--------|---------|
-| `lab1-3/` | `lab1_*` · `lab2_*` · `lab3_*` |
-| `lab4-containers/` | `lab4_url` |
-| `lab5-kubernetes/` | `lab5_url` · kubeconfig hint |
+| `Lab1-3/infrastructure/<cloud>/` | `lab1_*` · `lab2_*` · `lab3_*` |
+| `Lab4/infrastructure/<cloud>/` | `lab4_url` |
+| `Lab5/infrastructure/<cloud>/` | `lab5_url` · kubeconfig hint |

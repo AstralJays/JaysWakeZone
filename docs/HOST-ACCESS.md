@@ -1,6 +1,6 @@
 # Lab 2 — host access (Upwind sensor install)
 
-Wake Zone does **not** install Upwind. After `lab1-3` apply, get a shell and run the host sensor yourself.
+Wake Zone does **not** install Upwind. After `Lab1-3` apply, get a shell and run the host sensor yourself.
 
 | Cloud | Preferred | Also |
 |-------|-----------|------|
