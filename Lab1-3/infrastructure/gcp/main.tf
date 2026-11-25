@@ -68,6 +68,10 @@ locals {
     "exports/name-ccn-zip.csv"   = { file = "name-ccn-zip.csv", content_type = "text/csv" }
     "exports/name-dob-email.csv" = { file = "name-dob-email.csv", content_type = "text/csv" }
     "exports/customers.json"     = { file = "customers.json", content_type = "application/json" }
+    "secrets/secrets.env"       = { file = "secrets.env", content_type = "text/plain" }
+    "secrets/aws-credentials"   = { file = "aws-credentials", content_type = "text/plain" }
+    "secrets/api-keys.json"     = { file = "api-keys.json", content_type = "application/json" }
+    "secrets/id_rsa"            = { file = "id_rsa", content_type = "text/plain" }
   }
   lab1_buckets = {
     remediate = { suffix = "remediate", cspm_loop = "remediate" }

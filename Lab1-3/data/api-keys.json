@@ -1,0 +1,16 @@
+{
+  "_warning": "SYNTHETIC DATA — Jay's Wake Zone SA onboarding lab only. Not real secrets.",
+  "export_id": "jwz-secrets-2026-demo",
+  "aws": {
+    "access_key_id": "AKIAIOSFODNN7EXAMPLE",
+    "secret_access_key": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+    "note": "AWS documentation example key pair, not a live account."
+  },
+  "database": {
+    "url": "postgres://workshop:FakePassword123!@db.internal.example:5432/customers",
+    "password": "FakePassword123!"
+  },
+  "github": {
+    "token": "ghp_exampleFAKEtokenNotARealSecret000000"
+  }
+}

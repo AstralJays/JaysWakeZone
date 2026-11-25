@@ -1,6 +1,6 @@
 # Lab 1 — Storage CSPM / DSPM loop
 
-Terraform seeds **two** intentionally public object stores (per cloud) with the same synthetic PII:
+Terraform seeds **two** intentionally public object stores (per cloud) with the same synthetic PII and fake secrets:
 
 | Resource | Purpose |
 |----------|---------|
@@ -18,8 +18,14 @@ Patterns follow [dlptest.com/sample-data](https://dlptest.com/sample-data/) (fak
 | `name-ccn-zip.csv` | Name + card + ZIP + expiry |
 | `name-dob-email.csv` | Name + DOB + email |
 | `customers.json` | Compact JSON export |
+| `secrets.env` | Fake env secrets (AWS doc example key, DB password, placeholder token) |
+| `aws-credentials` | Fake AWS shared-credentials file (documentation example key) |
+| `api-keys.json` | Same fake secrets as JSON |
+| `id_rsa` | Non-usable private-key fixture (detector bait only) |
 
-> Not real people. Workshop / sandbox only.
+Objects land under `exports/` (PII) and `secrets/` (credentials) in **both** the remediate and exception stores.
+
+> Not real people or credentials. Workshop / sandbox only. AWS key material is the [published documentation example](https://docs.aws.amazon.com/IAM/latest/UserGuide/security-creds.html#access-keys-and-secret-access-keys).
 
 ## Deploy / destroy
 

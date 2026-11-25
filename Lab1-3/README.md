@@ -4,7 +4,7 @@
 
 | Track | Folder | What |
 |-------|--------|------|
-| **1** Storage | `data/` | Public buckets + synthetic PII (CSPM / DSPM) |
+| **1** Storage | `data/` | Public buckets + synthetic PII and fake secrets (CSPM / DSPM) |
 | **2** VM/Hosts | `host/` | DVWA-lite app + Webmin on a VM |
 | **3** Serverless | `serverless/` | Lambda / App Service / Cloud Run |
 
