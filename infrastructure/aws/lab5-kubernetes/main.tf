@@ -1,6 +1,7 @@
-# Stack 3 of 3 — EKS + JaysWakeZone Agentic API Lab (Lab 5)
+# Stack 3 of 3 — EKS + WakeBot + in-cluster Ollama on GPU (Lab 5)
 # Publish YOURUSER/jwz-agent-lab then set container_image.
-# 1× t3.small — destroy promptly.
+# 1× t3.large (app + Upwind headroom) + 1× g4dn.xlarge (Ollama/T4) — destroy promptly (GPU $).
+# Node RAM sized for Upwind Sensor (≥4 GiB recommended) + Cluster Manager (~2 GiB) — SA installs Upwind.
 
 terraform {
   required_version = ">= 1.5.0"
@@ -35,6 +36,18 @@ variable "container_image" {
   type        = string
   description = "Docker Hub image you published from lab5-agentic/"
   default     = "YOURUSER/jwz-agent-lab:0.1.0"
+}
+
+variable "ollama_model" {
+  type        = string
+  description = "Model pulled into in-cluster Ollama"
+  default     = "llama3.2"
+}
+
+variable "gpu_instance_type" {
+  type        = string
+  description = "GPU node for Ollama (T4-class)"
+  default     = "g4dn.xlarge"
 }
 
 provider "aws" {
@@ -147,13 +160,54 @@ resource "aws_iam_role_policy_attachment" "node_ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-resource "aws_eks_node_group" "lab5" {
+# WakeBot + room for Upwind operator / cluster-manager / sensor (SA installs)
+# t3.large = 2 vCPU / 8 GiB — meets Upwind's ≥4 GiB node guidance with headroom
+resource "aws_eks_node_group" "cpu" {
   cluster_name    = aws_eks_cluster.lab5.name
-  node_group_name = "jwz"
+  node_group_name = "jwz-cpu"
   node_role_arn   = aws_iam_role.node.arn
   subnet_ids      = aws_subnet.public[*].id
-  instance_types  = ["t3.small"]
+  instance_types  = ["t3.large"]
   capacity_type   = "ON_DEMAND"
+  disk_size       = 40
+
+  labels = {
+    workload = "cpu"
+  }
+
+  scaling_config {
+    desired_size = 1
+    min_size     = 1
+    max_size     = 1
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.node_worker,
+    aws_iam_role_policy_attachment.node_cni,
+    aws_iam_role_policy_attachment.node_ecr,
+  ]
+}
+
+# Ollama — T4 GPU (needs GPU AMI + nvidia device plugin)
+resource "aws_eks_node_group" "gpu" {
+  cluster_name    = aws_eks_cluster.lab5.name
+  node_group_name = "jwz-gpu"
+  node_role_arn   = aws_iam_role.node.arn
+  subnet_ids      = aws_subnet.public[*].id
+  instance_types  = [var.gpu_instance_type]
+  ami_type        = "AL2_x86_64_GPU"
+  capacity_type   = "ON_DEMAND"
+  disk_size       = 100
+
+  labels = {
+    workload = "gpu"
+  }
+
+  taint {
+    key    = "nvidia.com/gpu"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
 
   scaling_config {
     desired_size = 1
@@ -178,6 +232,187 @@ provider "kubernetes" {
   token                  = data.aws_eks_cluster_auth.lab5.token
 }
 
+resource "kubernetes_daemon_set_v1" "nvidia_device_plugin" {
+  metadata {
+    name      = "nvidia-device-plugin-daemonset"
+    namespace = "kube-system"
+    labels    = { name = "nvidia-device-plugin-ds" }
+  }
+
+  spec {
+    selector {
+      match_labels = { name = "nvidia-device-plugin-ds" }
+    }
+    strategy {
+      type = "RollingUpdate"
+    }
+    template {
+      metadata {
+        labels = { name = "nvidia-device-plugin-ds" }
+      }
+      spec {
+        toleration {
+          key      = "nvidia.com/gpu"
+          operator = "Exists"
+          effect   = "NoSchedule"
+        }
+        priority_class_name = "system-node-critical"
+        container {
+          image = "nvcr.io/nvidia/k8s-device-plugin:v0.14.5"
+          name  = "nvidia-device-plugin-ctr"
+          env {
+            name  = "FAIL_ON_INIT_ERROR"
+            value = "false"
+          }
+          security_context {
+            allow_privilege_escalation = false
+            capabilities {
+              drop = ["ALL"]
+            }
+          }
+          volume_mount {
+            name       = "device-plugin"
+            mount_path = "/var/lib/kubelet/device-plugins"
+          }
+        }
+        volume {
+          name = "device-plugin"
+          host_path {
+            path = "/var/lib/kubelet/device-plugins"
+          }
+        }
+      }
+    }
+  }
+
+  depends_on = [aws_eks_node_group.gpu]
+}
+
+resource "kubernetes_deployment" "ollama" {
+  metadata {
+    name   = "ollama"
+    labels = { app = "ollama", lab = "5" }
+  }
+
+  wait_for_rollout = false
+
+  spec {
+    replicas = 1
+    selector {
+      match_labels = { app = "ollama" }
+    }
+    template {
+      metadata {
+        labels = { app = "ollama" }
+      }
+      spec {
+        node_selector = {
+          workload = "gpu"
+        }
+        toleration {
+          key      = "nvidia.com/gpu"
+          operator = "Equal"
+          value    = "true"
+          effect   = "NoSchedule"
+        }
+        container {
+          name  = "ollama"
+          image = "ollama/ollama:latest"
+
+          port {
+            name           = "http"
+            container_port = 11434
+          }
+
+          # Leave RAM for Upwind Sensor DaemonSet on the GPU node (do not max the node)
+          resources {
+            requests = {
+              cpu              = "1"
+              memory           = "2Gi"
+              "nvidia.com/gpu" = "1"
+            }
+            limits = {
+              cpu              = "2"
+              memory           = "6Gi"
+              "nvidia.com/gpu" = "1"
+            }
+          }
+
+          volume_mount {
+            name       = "ollama-data"
+            mount_path = "/root/.ollama"
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/"
+              port = 11434
+            }
+            initial_delay_seconds = 15
+            period_seconds        = 10
+          }
+        }
+        volume {
+          name = "ollama-data"
+          empty_dir {}
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    aws_eks_node_group.gpu,
+    kubernetes_daemon_set_v1.nvidia_device_plugin,
+  ]
+}
+
+resource "kubernetes_service" "ollama" {
+  metadata {
+    name = "ollama"
+  }
+  spec {
+    selector = { app = "ollama" }
+    port {
+      name        = "http"
+      port        = 11434
+      target_port = 11434
+    }
+  }
+
+  depends_on = [kubernetes_deployment.ollama]
+}
+
+resource "kubernetes_job_v1" "ollama_pull" {
+  metadata {
+    name = "ollama-pull-model"
+  }
+
+  wait_for_completion = false
+
+  spec {
+    backoff_limit = 8
+    template {
+      metadata {
+        labels = { app = "ollama-pull" }
+      }
+      spec {
+        restart_policy = "OnFailure"
+        container {
+          name  = "pull"
+          image = "ollama/ollama:latest"
+          env {
+            name  = "OLLAMA_HOST"
+            value = "http://ollama:11434"
+          }
+          command = ["ollama", "pull", var.ollama_model]
+        }
+      }
+    }
+  }
+
+  depends_on = [kubernetes_service.ollama]
+}
+
 resource "kubernetes_deployment" "jwz" {
   metadata {
     name   = "jwz-agent-lab"
@@ -194,6 +429,9 @@ resource "kubernetes_deployment" "jwz" {
         labels = { app = "jwz-agent-lab" }
       }
       spec {
+        node_selector = {
+          workload = "cpu"
+        }
         container {
           name              = "app"
           image             = var.container_image
@@ -202,6 +440,14 @@ resource "kubernetes_deployment" "jwz" {
           env {
             name  = "PORT"
             value = "8080"
+          }
+          env {
+            name  = "OLLAMA_BASE_URL"
+            value = "http://ollama.default.svc.cluster.local:11434/v1"
+          }
+          env {
+            name  = "OLLAMA_MODEL"
+            value = var.ollama_model
           }
 
           port {
@@ -233,7 +479,10 @@ resource "kubernetes_deployment" "jwz" {
     }
   }
 
-  depends_on = [aws_eks_node_group.lab5]
+  depends_on = [
+    aws_eks_node_group.cpu,
+    kubernetes_service.ollama,
+  ]
 }
 
 resource "kubernetes_service" "jwz" {
@@ -258,8 +507,12 @@ output "lab5_cluster_name" {
 }
 
 output "lab5_url" {
-  description = "Agentic API Lab UI — install cluster sensor yourself"
+  description = "WakeBot UI — install cluster sensor yourself"
   value       = try("http://${kubernetes_service.jwz.status[0].load_balancer[0].ingress[0].hostname}", "pending-lb")
+}
+
+output "lab5_ollama" {
+  value = "in-cluster Service ollama:11434 (GPU) · model ${var.ollama_model}"
 }
 
 output "lab5_kubeconfig_hint" {

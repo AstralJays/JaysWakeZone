@@ -1,4 +1,4 @@
-# Stack 3/3 — AKS + Agentic API Lab. Destroy when done.
-location    = "eastus"
-name_prefix = "jayswakezone"
+location        = "eastus"
 container_image = "YOURUSER/jwz-agent-lab:0.1.0"
+ollama_model    = "llama3.2"
+# gpu_vm_size  = "Standard_NC4as_T4_v3"   # T4 — confirm GPU quota / region SKU

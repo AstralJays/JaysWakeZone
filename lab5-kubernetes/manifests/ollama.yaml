@@ -1,0 +1,83 @@
+# Reference — Terraform applies equivalent via kubernetes_* resources.
+# In-cluster Ollama on a GPU node; WakeBot points at http://ollama:11434/v1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  labels:
+    app: ollama
+    lab: "5"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      nodeSelector:
+        workload: gpu
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - name: http
+              containerPort: 11434
+          resources:
+            # Leave headroom for Upwind Sensor DaemonSet on the GPU node
+            requests:
+              cpu: "1"
+              memory: 2Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "2"
+              memory: 6Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: ollama-data
+              mountPath: /root/.ollama
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 11434
+            initialDelaySeconds: 10
+            periodSeconds: 10
+      volumes:
+        - name: ollama-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+spec:
+  selector:
+    app: ollama
+  ports:
+    - name: http
+      port: 11434
+      targetPort: 11434
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ollama-pull-llama32
+spec:
+  backoffLimit: 6
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: pull
+          image: ollama/ollama:latest
+          env:
+            - name: OLLAMA_HOST
+              value: http://ollama:11434
+          command: ["ollama", "pull", "llama3.2"]

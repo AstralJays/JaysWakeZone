@@ -1,6 +1,6 @@
-# Stack 3/3 — GKE + Agentic API Lab. Destroy when done.
-project_id  = "YOUR_GCP_PROJECT"
-region      = "us-central1"
-zone        = "us-central1-a"
-name_prefix = "jayswakezone"
+project_id      = "YOUR_GCP_PROJECT"
+region          = "us-central1"
+zone            = "us-central1-a"
 container_image = "docker.io/YOURUSER/jwz-agent-lab:0.1.0"
+ollama_model    = "llama3.2"
+# gpu_type    = "nvidia-tesla-t4"   # confirm GPU quota in the project

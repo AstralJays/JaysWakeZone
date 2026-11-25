@@ -1,4 +1,5 @@
-# Stack 3/3 — EKS + Agentic API Lab. Destroy when done.
-aws_region  = "us-east-1"
-name_prefix = "jayswakezone"
+aws_region      = "us-east-1"
+# aws_profile   = "workshop"
 container_image = "YOURUSER/jwz-agent-lab:0.1.0"
+ollama_model    = "llama3.2"
+# gpu_instance_type = "g4dn.xlarge"   # T4 — confirm GPU quota in the account

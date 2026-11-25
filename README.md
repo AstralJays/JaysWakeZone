@@ -30,7 +30,7 @@ infrastructure/<aws|azure|gcp>/
 |--------|------|--------------|
 | `lab1-3/` | **1** Storage · **2** VM and Hosts · **3** Serverless | Day-1 onboarding |
 | `lab4-containers/` | **4** Juice Shop (public image) | ECS Fargate \| ACA \| Cloud Run |
-| `lab5-kubernetes/` | **5** Agentic API Lab (your Hub image) | EKS \| AKS \| GKE |
+| `lab5-kubernetes/` | **5** WakeBot + Ollama GPU (your Hub image) | EKS \| AKS \| GKE |
 
 Each folder is its **own** Terraform state — apply/destroy independently.
 

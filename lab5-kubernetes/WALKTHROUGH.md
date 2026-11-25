@@ -1,37 +1,33 @@
-# Lab 5 walkthrough — DVAA on Kubernetes
+# Lab 5 walkthrough — WakeBot + Ollama GPU
 
 ## Deploy
 
 ```bash
 cd infrastructure/<cloud>/lab5-kubernetes
 cp terraform.tfvars.example terraform.tfvars
-# GCP: set project_id
+# set container_image (GCP: also project_id)
 terraform init && terraform apply
 terraform output lab5_url
+terraform output lab5_ollama
 ```
 
-Wait for the LoadBalancer, then open the DVAA dashboard.
+Wait for the LoadBalancer. Status light goes **ollama** after the GPU node is ready and the pull Job finishes `llama3.2` (often several minutes).
 
 ## In the UI
 
-1. **Agents** — browse the fleet (SecureBot → LegacyBot, MCP, A2A).
-2. **Challenges / Attack Lab** — CTF-style attacks (simulated mode needs no API key).
-3. **Attack Log** — review payloads and leaked secrets.
+1. Confirm status chip: **ollama · llama3.2**
+2. Run **LLM01** → expect `OVERRIDE_OK` / secrets (guided fallback if the model refuses)
+3. Plant tip → **LLM04** / **LLM08**
+4. **LLM06** or Hijack booking
+5. Research `http://127.0.0.1:8080/internal/metadata` (in-pod SSRF)
 
-Optional LLM mode: Settings → paste OpenAI/Anthropic key (browser-side; not required for the lab).
+## Upwind (manual)
 
-## Upwind
+Nodes are sized for the sensor (≥4 GiB) + Cluster Manager headroom — Terraform does **not** install Upwind.
 
-Install the cluster / node sensor per portal docs, generate dashboard traffic, confirm the workload appears.
-
-## Direct agent attacks (optional)
-
-LB does **not** publish agent ports. After kubeconfig:
-
-```bash
-kubectl port-forward deploy/jwz-dvaa 9000:9000 7003:7003
-# then e.g. npx hackmyagent attack http://localhost:7003/v1/chat/completions --api-format openai
-```
+1. Install the cluster sensor from the portal / Helm operator docs.
+2. Add a toleration for `nvidia.com/gpu=true:NoSchedule` so the DaemonSet also runs on the Ollama GPU node.
+3. Generate chat traffic with `owasp_llm` tags; confirm the workload appears.
 
 ## Destroy
 
@@ -39,4 +35,4 @@ kubectl port-forward deploy/jwz-dvaa 9000:9000 7003:7003
 terraform destroy
 ```
 
-Do not leave the control plane overnight without intent.
+GPU nodes are expensive — destroy when finished.

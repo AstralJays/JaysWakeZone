@@ -1,4 +1,4 @@
-# Lab 5 walkthrough — Agentic API Lab
+# Lab 5 walkthrough — WakeBot (OWASP LLM)
 
 ## Deploy (Kubernetes)
 
@@ -10,18 +10,22 @@ terraform init && terraform apply
 terraform output lab5_url
 ```
 
-Open the URL → one page, steps 1→6 on the left.
+Open the URL → WakeBot chat + OWASP LLM sidebar (SurfShop-style).
+
+Status light should go **ollama** once the GPU pod is ready and `llama3.2` is pulled (can take a few minutes). Until then, guided/simulated replies still work.
 
 ## Path
 
-1. **Login** as `alice@surf.lab` / any password → save token  
-2. **Order 102** → Bob’s card last4 (BOLA)  
-3. **Users** → admin `api_key` in the JSON  
-4. **Promote** → admin flags  
-5. **Chat** → ignore previous instructions / vault secret  
-6. **Research** `http://127.0.0.1:8080/internal/metadata` (in-pod) → IAM/secret hint  
+1. **LLM01** — click Prompt injection → Send → expect `OVERRIDE_OK` + secrets  
+2. **LLM02** — staff PIN / wholesale code in the reply  
+3. **LLM04** — Plant tip (FREEBOARD) → ask about FREEBOARD / promo  
+4. **LLM06** — ship booking `JWZ-10847` (or Hijack button) → address mutates with no approval  
+5. **LLM07** — dump system prompt / INTERNAL workshop notes  
+6. **AGENT** — Research `http://127.0.0.1:8080/internal/metadata` → IAM / vault hint  
 
-Optional: install Upwind cluster sensor, generate traffic through the six steps.
+LLM03 is SCA-only (image deps). LLM05/08/09/10 work from the same sidebar.
+
+Optional: Upwind cluster sensor — tagged chat traffic shows `owasp_llm=LLM0x` on `/api/chat`.
 
 ## Destroy
 
