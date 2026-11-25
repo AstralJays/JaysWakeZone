@@ -7,8 +7,8 @@ Terraform installs this for you on the Lab 2 VM. No manual app/image work.
 
 After apply: shell onto the VM → install Upwind **host sensor** → baseline L3/L4/L7 → follow the in-app walkthrough.
 
-See [WALKTHROUGH.md](WALKTHROUGH.md) and [docs/HOST-ACCESS.md](../docs/HOST-ACCESS.md).
+See [WALKTHROUGH.md](WALKTHROUGH.md). Shell access: parent [`../README.md`](../README.md).
 
 ## Deploy / destroy
 
-Use the parent stack: [`../README.md`](../README.md) (`Lab1-3/infrastructure/<cloud>/`). Host access: [docs/HOST-ACCESS.md](../../docs/HOST-ACCESS.md).
+Use the parent stack: [`../README.md`](../README.md) (`Lab1-3/infrastructure/<cloud>/`).

@@ -4,7 +4,7 @@ Same content is live in the app at **`/walkthrough`** and on each **`/labs/<atta
 
 ## Session order
 
-1. Shell onto the VM (AWS SSM / Azure SSH / GCP `gcloud compute ssh`) — see `docs/HOST-ACCESS.md`
+1. Shell onto the VM (AWS SSM / Azure SSH / GCP `gcloud compute ssh`) — see `Lab1-3/README.md` (SSM / SSH outputs)
 2. Install the Upwind **host eBPF sensor**
 3. Wait for L3 / L4 / L7 baseline
 4. Run FiU modules → **Function in use**

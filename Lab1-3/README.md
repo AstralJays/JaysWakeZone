@@ -33,13 +33,13 @@ terraform output
 
 Useful outputs: `lab1_*` (bucket names), `lab2_*` (app URL / SSM or SSH), `lab3_*` (function URL).
 
-**Lab 2 shell** (Upwind host sensor): [docs/HOST-ACCESS.md](../docs/HOST-ACCESS.md)
+**Lab 2 shell** (install Upwind host sensor yourself — not in Terraform):
 
 | Cloud | Access |
 |-------|--------|
-| AWS | `terraform output lab2_ssm_command` |
-| Azure | `terraform output lab2_ssh_command` (needs `ssh_public_key`) |
-| GCP | `terraform output lab2_ssh_command` |
+| AWS | `terraform output lab2_ssm_command` → SSM (default; no key). Optional `key_name` for SSH. Wait ~2 min after boot for SSM. |
+| Azure | `terraform output lab2_ssh_command` (requires `ssh_public_key` in tfvars) |
+| GCP | `terraform output lab2_ssh_command` (`gcloud compute ssh`) |
 
 ## Destroy
 

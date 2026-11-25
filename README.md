@@ -23,7 +23,6 @@
 Lab1-3/     Storage · VM · Serverless
 Lab4/       Juice Shop on managed containers
 Lab5/       Wakezone AI + Ollama GPU (Kubernetes)
-docs/       SA notes
 ```
 
 Each lab has `infrastructure/{aws|azure|gcp}/` with **its own Terraform state**. Deploy one cloud per lab folder.
@@ -83,7 +82,7 @@ terraform output
 terraform destroy
 ```
 
-Outputs: `lab1_*`, `lab2_*`, `lab3_*`. Lab 2 host access: [docs/HOST-ACCESS.md](docs/HOST-ACCESS.md).
+Outputs: `lab1_*`, `lab2_*`, `lab3_*`. Lab 2 shell: see `Lab1-3/README.md`.
 
 ### Lab 4 (Juice Shop)
 
@@ -114,4 +113,3 @@ Pulls `papaperk/jwz-agent-lab:0.1.0` + `ollama/ollama`.
 
 Sensors/tracers are **not** in Terraform — install after apply. Lab 5 nodes are sized for sensor headroom (add a GPU toleration for the cluster sensor if needed).
 
-Facilitator notes: [docs/SA-ONBOARDING.md](docs/SA-ONBOARDING.md) · path map: [docs/LEARNING-PATH.md](docs/LEARNING-PATH.md).
