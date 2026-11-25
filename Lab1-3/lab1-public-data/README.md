@@ -20,3 +20,7 @@ Patterns follow [dlptest.com/sample-data](https://dlptest.com/sample-data/) (fak
 | `customers.json` | Compact JSON export |
 
 > Not real people. Workshop / sandbox only.
+
+## Deploy / destroy
+
+Use the parent stack: [`../README.md`](../README.md) (`Lab1-3/infrastructure/<cloud>/`).

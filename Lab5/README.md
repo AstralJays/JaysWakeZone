@@ -1,14 +1,57 @@
 # Lab 5 — Microservice + AI (Wakezone AI)
 
-SurfShop/Maya-style **Wakezone AI** chat for paddle board rentals — OWASP LLM Top 10 + agentic tools — backed by **in-cluster Ollama on a GPU node**.
+SurfShop/Maya-style **Wakezone AI** chat (paddle rentals) — OWASP LLM Top 10 + agentic tools — with **in-cluster Ollama on a GPU node**.
 
 | | |
 |-|-|
-| **Image (public)** | `papaperk/jwz-agent-lab:0.1.0` |
+| **App image (public)** | `papaperk/jwz-agent-lab:0.1.0` |
+| **Ollama** | `ollama/ollama` on GPU |
 | **Port** | `8080` |
 | **K8s** | EKS / AKS / GKE under `infrastructure/` |
 
-No local image build required for deploy — Terraform defaults to the Hub image (same idea as Lab 4 / Juice Shop).
+No local image build for deploy — same pattern as Lab 4.
+
+## Configure
+
+```bash
+cd Lab5/infrastructure/<aws|azure|gcp>
+cp terraform.tfvars.example terraform.tfvars
+```
+
+| Cloud | Edit in `terraform.tfvars` |
+|-------|----------------------------|
+| **AWS** | `aws_region` (default `us-east-1`). Optional: `aws_profile`, `gpu_instance_type`. |
+| **Azure** | `location` (default `eastus`). Optional: `gpu_vm_size`. |
+| **GCP** | **Required:** `project_id`. Optional: `region` / `zone`, `gpu_type`. |
+
+Confirm **GPU (T4) quota** in that region/account before apply.  
+`container_image` / `ollama_model` are optional (defaults: Hub image + `llama3.2`).
+
+| Cloud | App node (Upwind headroom) | Ollama GPU |
+|-------|----------------------------|------------|
+| AWS | `t3.large` (8 GiB) | `g4dn.xlarge` (T4) |
+| Azure | `Standard_D2s_v5` (8 GiB) | `Standard_NC4as_T4_v3` |
+| GCP | `e2-standard-2` (8 GiB) | `n1-standard-4` + T4 |
+
+## Deploy
+
+```bash
+terraform init
+terraform apply
+terraform output lab5_url
+```
+
+Open the URL → Wakezone AI. Status may stay **simulated** until the GPU pod pulls `llama3.2` (a few minutes).
+
+## Destroy
+
+```bash
+terraform destroy   # do this ASAP — GPU cost
+```
+
+## After apply (Upwind)
+
+Install the **cluster sensor** yourself (not in Terraform). Add a GPU node toleration if the sensor must schedule onto the Ollama pool. Chat calls tag `owasp_llm=…` for the workshop path — see [WALKTHROUGH.md](WALKTHROUGH.md).
 
 ## Local (optional)
 
@@ -17,9 +60,8 @@ cd Lab5
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8080
+# optional: OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
 ```
-
-Optional Ollama: `OLLAMA_BASE_URL=http://127.0.0.1:11434/v1`
 
 ```bash
 docker run --rm -p 8088:8080 \
@@ -28,31 +70,10 @@ docker run --rm -p 8088:8080 \
   papaperk/jwz-agent-lab:0.1.0
 ```
 
-## Deploy (Kubernetes + GPU Ollama)
-
-```bash
-cd Lab5/infrastructure/<aws|azure|gcp>
-cp terraform.tfvars.example terraform.tfvars
-terraform init && terraform apply
-terraform output lab5_url
-```
-
-| Cloud | App node (Upwind headroom) | Ollama GPU |
-|-------|----------------------------|------------|
-| AWS | `t3.large` (8 GiB) | `g4dn.xlarge` (T4) |
-| Azure | `Standard_D2s_v5` (8 GiB) | `Standard_NC4as_T4_v3` |
-| GCP | `e2-standard-2` (8 GiB) | `n1-standard-4` + T4 |
-
-Wakezone AI → `http://ollama.default.svc.cluster.local:11434/v1`.  
-**Upwind is not in Terraform** — install the cluster sensor yourself (add GPU toleration). **Destroy ASAP.**
-
-See [WALKTHROUGH.md](WALKTHROUGH.md) and `manifests/`.
-
-### Maintainers — refresh the Hub image
+### Maintainers — refresh Hub image
 
 ```bash
 cd Lab5
 docker build -t papaperk/jwz-agent-lab:0.1.0 -t papaperk/jwz-agent-lab:latest .
-docker push papaperk/jwz-agent-lab:0.1.0
-docker push papaperk/jwz-agent-lab:latest
+docker push papaperk/jwz-agent-lab:0.1.0 && docker push papaperk/jwz-agent-lab:latest
 ```

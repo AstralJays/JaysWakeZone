@@ -1,19 +1,59 @@
 # Lab 1–3 — Storage · VM · Serverless
 
-One Terraform apply per cloud deploys Labs **1**, **2**, and **3**.
+One Terraform apply per cloud deploys **all three** labs (separate state from Lab 4 / Lab 5).
 
-| Lab | Assets | What |
+| Lab | Folder | What |
 |-----|--------|------|
-| 1 Storage | `lab1-public-data/` | Public buckets + synthetic PII |
-| 2 VM/Hosts | `lab2-hosts-vms/` | DVWA-lite host (scripts install from clone) |
-| 3 Serverless | `lab3-serverless/` | Lambda / App Service / Cloud Run |
+| **1** Storage | `lab1-public-data/` | Public buckets + synthetic PII (CSPM / DSPM) |
+| **2** VM/Hosts | `lab2-hosts-vms/` | DVWA-lite app + Webmin on a VM |
+| **3** Serverless | `lab3-serverless/` | Lambda / App Service / Cloud Run |
 
-## Deploy
+## Configure
 
 ```bash
 cd Lab1-3/infrastructure/<aws|azure|gcp>
 cp terraform.tfvars.example terraform.tfvars
-terraform init && terraform apply
 ```
 
-See [docs/HOST-ACCESS.md](../docs/HOST-ACCESS.md) for Lab 2 SSM / SSH (Upwind host sensor).
+| Cloud | Edit in `terraform.tfvars` |
+|-------|----------------------------|
+| **AWS** | `aws_region` (default `us-east-1`). Optional: `aws_profile`, `key_name` (SSM is default — no key). |
+| **Azure** | `location` (default `eastus`). **Required:** `ssh_public_key` for the Lab 2 VM. |
+| **GCP** | **Required:** `project_id`. Optional: `region` / `zone`. |
+
+`repo_url` / `repo_ref` default to this GitHub repo (`main`) so the VM can clone Lab 2. Leave them unless you fork.
+
+## Deploy
+
+```bash
+terraform init
+terraform apply
+terraform output
+```
+
+Useful outputs: `lab1_*` (bucket names), `lab2_*` (app URL / SSM or SSH), `lab3_*` (function URL).
+
+**Lab 2 shell** (Upwind host sensor): [docs/HOST-ACCESS.md](../docs/HOST-ACCESS.md)
+
+| Cloud | Access |
+|-------|--------|
+| AWS | `terraform output lab2_ssm_command` |
+| Azure | `terraform output lab2_ssh_command` (needs `ssh_public_key`) |
+| GCP | `terraform output lab2_ssh_command` |
+
+## Destroy
+
+```bash
+# same folder as apply
+terraform destroy
+```
+
+## After apply (Upwind)
+
+Install sensors yourself — not in Terraform:
+
+1. Lab 1 — agentless / CSPM on the public buckets  
+2. Lab 2 — host eBPF sensor on the VM, then use `/walkthrough`  
+3. Lab 3 — tracer on the serverless URL  
+
+More detail: `lab1-public-data/README.md`, `lab2-hosts-vms/WALKTHROUGH.md`, `lab3-serverless/README.md`.
