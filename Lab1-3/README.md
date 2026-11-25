@@ -17,6 +17,8 @@ Lab1-3/
   infrastructure/   aws | azure | gcp
 ```
 
+You **will need a shell on the Lab 2 VM** (SSM, OpenSSH, or PuTTY) to install the Upwind host sensor. Set that up before or during configure — see [Shell into the host VM](#shell-into-the-host-vm).
+
 ## Configure
 
 ```bash
@@ -26,9 +28,31 @@ cp terraform.tfvars.example terraform.tfvars
 
 | Cloud | Edit in `terraform.tfvars` |
 |-------|----------------------------|
-| **AWS** | `aws_region` (default `us-east-1`). Optional: `aws_profile`, `key_name` (SSM is default — no key). |
-| **Azure** | `location` (default `eastus`). **Required:** `ssh_public_key` for the VM. |
-| **GCP** | **Required:** `project_id`. Optional: `region` / `zone`. |
+| **AWS** | `aws_region` (default `us-east-1`). Optional: `aws_profile`. For SSH/PuTTY (not only SSM): set `key_name` to an existing EC2 key pair. |
+| **Azure** | `location` (default `eastus`). **Required:** `ssh_public_key` (see key gen below). |
+| **GCP** | **Required:** `project_id`. Optional: `region` / `zone`. Optional: `ssh_public_key` for plain `ssh` in addition to `gcloud compute ssh`. |
+
+### Generate an SSH key (Azure required; also fine for GCP / local use)
+
+```bash
+ssh-keygen -t ed25519 -f ~/.ssh/jwz_lab -N "" -C "jayswakezone"
+cat ~/.ssh/jwz_lab.pub
+# macOS: pbcopy < ~/.ssh/jwz_lab.pub
+```
+
+**Azure** — paste the **public** key into `infrastructure/azure/terraform.tfvars`:
+
+```hcl
+ssh_public_key = "ssh-ed25519 AAAA... jayswakezone"
+```
+
+**AWS SSH/PuTTY** — create (or reuse) an EC2 key pair in the console / CLI, download the `.pem`, set:
+
+```hcl
+key_name = "my-ec2-keypair"   # name in AWS, not the file path
+```
+
+Keep the private key (`.pem` / `.ppk`) on the machine you’ll SSH from.
 
 `repo_url` / `repo_ref` default to this GitHub repo (`main`) so the VM can clone `host/`. Leave them unless you fork.
 
@@ -40,15 +64,55 @@ terraform apply
 terraform output
 ```
 
-Useful outputs: `lab1_*` (buckets), `lab2_*` (app URL / SSM or SSH), `lab3_*` (function URL).
+Useful outputs: `lab1_*` (buckets), `lab2_*` (app URL / shell hints), `lab3_*` (function URL).
 
-**VM shell** (install Upwind host sensor yourself — not in Terraform):
+## Shell into the host VM
 
-| Cloud | Access |
-|-------|--------|
-| AWS | `terraform output lab2_ssm_command` → SSM (default; no key). Optional `key_name` for SSH. Wait ~2 min after boot for SSM. |
-| Azure | `terraform output lab2_ssh_command` (requires `ssh_public_key` in tfvars) |
-| GCP | `terraform output lab2_ssh_command` (`gcloud compute ssh`) |
+Needed for the **Upwind host sensor**. Pick what your workshop machines support.
+
+### AWS — SSM (default, no SSH key)
+
+Needs Session Manager plugin + IAM (already on the instance). Wait ~2 minutes after boot:
+
+```bash
+terraform output lab2_ssm_command
+# → aws ssm start-session --target i-xxxx --region us-east-1
+```
+
+Works from AWS CLI on Mac/Linux/Windows. No PuTTY required.
+
+### AWS — SSH / PuTTY (optional)
+
+Set `key_name` before apply. Then:
+
+```bash
+terraform output lab2_public_ip
+ssh -i /path/to/keypair.pem ubuntu@<lab2_public_ip>
+```
+
+**PuTTY:** convert `.pem` → `.ppk` with PuTTYgen → Session host `ubuntu@<ip>` (or IP + username `ubuntu`) → Auth → private key `.ppk`.
+
+### Azure — SSH / PuTTY (required key at apply)
+
+```bash
+terraform output lab2_ssh_command
+ssh -i ~/.ssh/jwz_lab azureuser@<lab2_public_ip>
+```
+
+**PuTTY:** load `jwz_lab` into PuTTYgen (Conversions → Import) → save `.ppk` → connect as `azureuser` with that key.
+
+### GCP — gcloud or SSH
+
+```bash
+terraform output lab2_ssh_command
+# → gcloud compute ssh ubuntu@… --zone … --project …
+```
+
+Or plain SSH if you set `ssh_public_key` in tfvars:
+
+```bash
+ssh -i ~/.ssh/jwz_lab ubuntu@<lab2_public_ip>
+```
 
 ## Destroy
 
@@ -62,7 +126,7 @@ terraform destroy
 Install sensors yourself — not in Terraform:
 
 1. Storage — agentless / CSPM on the public buckets  
-2. Host — eBPF sensor on the VM, then use `/walkthrough`  
+2. Host — shell in (above) → host eBPF sensor → `/walkthrough` on the app URL  
 3. Serverless — tracer on the function URL  
 
 More detail: `data/README.md`, `host/WALKTHROUGH.md`, `serverless/README.md`.

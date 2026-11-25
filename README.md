@@ -50,7 +50,7 @@ cp terraform.tfvars.example terraform.tfvars
 | Cloud | Typical edits in `terraform.tfvars` |
 |-------|-------------------------------------|
 | **AWS** | `aws_region` (default `us-east-1`). Optional: `aws_profile`. |
-| **Azure** | `location` (default `eastus`). **Lab1-3:** set `ssh_public_key` (required for the VM). |
+| **Azure** | `location` (default `eastus`). **Lab1-3:** set `ssh_public_key` (see `Lab1-3/README.md` to generate). |
 | **GCP** | **`project_id` (required)**. Optional: `region` / `zone` (defaults `us-central1` / `us-central1-a`). |
 
 Lab 5 also needs **GPU quota** in that region (T4). Image defaults are public — no `container_image` unless you fork.
@@ -82,7 +82,8 @@ terraform output
 terraform destroy
 ```
 
-Outputs: `lab1_*`, `lab2_*`, `lab3_*`. Lab 2 shell: see `Lab1-3/README.md`.
+Outputs: `lab1_*`, `lab2_*`, `lab3_*`.  
+Lab 2 VM shell (SSM / SSH / PuTTY) for the host sensor: see `Lab1-3/README.md`.
 
 ### Lab 4 (Juice Shop)
 

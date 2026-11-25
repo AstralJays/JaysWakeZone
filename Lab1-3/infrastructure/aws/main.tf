@@ -291,7 +291,7 @@ resource "aws_instance" "lab2" {
 
 data "archive_file" "lab3" {
   type        = "zip"
-  source_file = "${path.module}/../../serverless/lambda/handler.py"
+  source_file = "${path.module}/../../serverless/app.py"
   output_path = "${path.module}/.build/lab3-lambda.zip"
 }
 
@@ -322,7 +322,7 @@ resource "aws_iam_role_policy_attachment" "lab3_basic" {
 resource "aws_lambda_function" "lab3" {
   function_name    = "${var.name_prefix}-lab3"
   role             = aws_iam_role.lab3.arn
-  handler          = "handler.handler"
+  handler          = "app.lambda_handler"
   runtime          = "python3.9"
   filename         = data.archive_file.lab3.output_path
   source_code_hash = data.archive_file.lab3.output_base64sha256

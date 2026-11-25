@@ -1,12 +1,6 @@
-# Optional local build only. Terraform uses Docker Hub python:3.9-bullseye + boot command.
+# Not used by Terraform.
+# AWS Lambda zips app.py. Azure/GCP boot a public python image inline.
 FROM python:3.9-bullseye
-
 WORKDIR /app
-
-RUN pip install --no-cache-dir flask==2.0.3 werkzeug==2.0.3
-
 COPY app.py .
-
-EXPOSE 8080
-
-CMD ["python", "app.py"]
+CMD ["python", "-c", "print('Lab 3 AWS handler is app.lambda_handler — deploy with Terraform, not this image')"]

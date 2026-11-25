@@ -5,5 +5,9 @@ region      = "us-central1"
 zone        = "us-central1-a"
 name_prefix = "jayswakezone"
 
+# Host access: gcloud compute ssh works without this.
+# For plain ssh / PuTTY, set a public key (same as Azure):
+# ssh_public_key = "ssh-ed25519 AAAA..."
+
 repo_url = "https://github.com/AstralJays/JaysWakeZone.git"
 repo_ref = "main"

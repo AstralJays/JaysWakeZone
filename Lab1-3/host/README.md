@@ -5,9 +5,10 @@ Terraform installs this for you on the Lab 2 VM. No manual app/image work.
 - App: `:8080` → **`/walkthrough`** then `/labs`
 - Webmin: `:10000` — `admin` / `password`
 
-After apply: shell onto the VM → install Upwind **host sensor** → baseline L3/L4/L7 → follow the in-app walkthrough.
+After apply: **shell onto the VM** (AWS SSM, OpenSSH, or PuTTY) → install Upwind **host sensor** → baseline L3/L4/L7 → follow the in-app walkthrough.
 
-See [WALKTHROUGH.md](WALKTHROUGH.md). Shell access: parent [`../README.md`](../README.md).
+Shell how-to (SSM / SSH / PuTTY per cloud): parent [`../README.md`](../README.md)#shell-into-the-host-vm.  
+Attacks: [WALKTHROUGH.md](WALKTHROUGH.md).
 
 ## Deploy / destroy
 
