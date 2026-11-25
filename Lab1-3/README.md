@@ -1,12 +1,21 @@
 # Lab 1–3 — Storage · VM · Serverless
 
-One Terraform apply per cloud deploys **all three** labs (separate state from Lab 4 / Lab 5).
+**One deployment** — a single `terraform apply` per cloud stands up all three tracks (one state, one destroy). Separate from Lab 4 / Lab 5.
 
-| Lab | Folder | What |
-|-----|--------|------|
-| **1** Storage | `lab1-public-data/` | Public buckets + synthetic PII (CSPM / DSPM) |
-| **2** VM/Hosts | `lab2-hosts-vms/` | DVWA-lite app + Webmin on a VM |
-| **3** Serverless | `lab3-serverless/` | Lambda / App Service / Cloud Run |
+| Track | Folder | What |
+|-------|--------|------|
+| **1** Storage | `data/` | Public buckets + synthetic PII (CSPM / DSPM) |
+| **2** VM/Hosts | `host/` | DVWA-lite app + Webmin on a VM |
+| **3** Serverless | `serverless/` | Lambda / App Service / Cloud Run |
+
+```text
+Lab1-3/
+  data/             seed files for storage
+  host/             VM app + walkthrough
+  serverless/       function code
+  scripts/          VM bootstrap
+  infrastructure/   aws | azure | gcp
+```
 
 ## Configure
 
@@ -18,10 +27,10 @@ cp terraform.tfvars.example terraform.tfvars
 | Cloud | Edit in `terraform.tfvars` |
 |-------|----------------------------|
 | **AWS** | `aws_region` (default `us-east-1`). Optional: `aws_profile`, `key_name` (SSM is default — no key). |
-| **Azure** | `location` (default `eastus`). **Required:** `ssh_public_key` for the Lab 2 VM. |
+| **Azure** | `location` (default `eastus`). **Required:** `ssh_public_key` for the VM. |
 | **GCP** | **Required:** `project_id`. Optional: `region` / `zone`. |
 
-`repo_url` / `repo_ref` default to this GitHub repo (`main`) so the VM can clone Lab 2. Leave them unless you fork.
+`repo_url` / `repo_ref` default to this GitHub repo (`main`) so the VM can clone `host/`. Leave them unless you fork.
 
 ## Deploy
 
@@ -31,9 +40,9 @@ terraform apply
 terraform output
 ```
 
-Useful outputs: `lab1_*` (bucket names), `lab2_*` (app URL / SSM or SSH), `lab3_*` (function URL).
+Useful outputs: `lab1_*` (buckets), `lab2_*` (app URL / SSM or SSH), `lab3_*` (function URL).
 
-**Lab 2 shell** (install Upwind host sensor yourself — not in Terraform):
+**VM shell** (install Upwind host sensor yourself — not in Terraform):
 
 | Cloud | Access |
 |-------|--------|
@@ -52,8 +61,8 @@ terraform destroy
 
 Install sensors yourself — not in Terraform:
 
-1. Lab 1 — agentless / CSPM on the public buckets  
-2. Lab 2 — host eBPF sensor on the VM, then use `/walkthrough`  
-3. Lab 3 — tracer on the serverless URL  
+1. Storage — agentless / CSPM on the public buckets  
+2. Host — eBPF sensor on the VM, then use `/walkthrough`  
+3. Serverless — tracer on the function URL  
 
-More detail: `lab1-public-data/README.md`, `lab2-hosts-vms/WALKTHROUGH.md`, `lab3-serverless/README.md`.
+More detail: `data/README.md`, `host/WALKTHROUGH.md`, `serverless/README.md`.

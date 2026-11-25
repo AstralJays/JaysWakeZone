@@ -84,7 +84,7 @@ data "aws_ami" "ubuntu" {
 }
 
 locals {
-  data_dir = "${path.module}/../../lab1-public-data"
+  data_dir = "${path.module}/../../data"
   lab1_objects = {
     "exports/name-ssn-ccn.csv"   = { file = "name-ssn-ccn.csv", content_type = "text/csv" }
     "exports/name-ssn-dob.csv"   = { file = "name-ssn-dob.csv", content_type = "text/csv" }
@@ -291,7 +291,7 @@ resource "aws_instance" "lab2" {
 
 data "archive_file" "lab3" {
   type        = "zip"
-  source_file = "${path.module}/../../lab3-serverless/lambda/handler.py"
+  source_file = "${path.module}/../../serverless/lambda/handler.py"
   output_path = "${path.module}/.build/lab3-lambda.zip"
 }
 

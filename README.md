@@ -20,16 +20,16 @@
 ## Repo layout
 
 ```text
-Lab1-3/     Storage · VM · Serverless
+Lab1-3/     Day-1 stack (storage + VM + serverless) — one terraform apply
 Lab4/       Juice Shop on managed containers
 Lab5/       Wakezone AI + Ollama GPU (Kubernetes)
 ```
 
-Each lab has `infrastructure/{aws|azure|gcp}/` with **its own Terraform state**. Deploy one cloud per lab folder.
+Each folder has `infrastructure/{aws|azure|gcp}/` with **its own Terraform state**.
 
-| Folder | Labs | Platforms |
+| Folder | What | Platforms |
 |--------|------|-----------|
-| `Lab1-3/` | 1 Storage · 2 VM/Hosts · 3 Serverless | buckets · VM · Lambda / App Service / Cloud Run |
+| `Lab1-3/` | **One deploy** covering Surf School 1–3 (`data/` · `host/` · `serverless/`) | buckets · VM · Lambda / App Service / Cloud Run |
 | `Lab4/` | Juice Shop | ECS Fargate · ACA · Cloud Run |
 | `Lab5/` | Wakezone AI + Ollama | EKS · AKS · GKE |
 

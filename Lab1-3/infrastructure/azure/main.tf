@@ -56,7 +56,7 @@ variable "repo_ref" {
 }
 
 locals {
-  data_dir = "${path.module}/../../lab1-public-data"
+  data_dir = "${path.module}/../../data"
   lab1_objects = {
     "exports/name-ssn-ccn.csv"   = { file = "name-ssn-ccn.csv", content_type = "text/csv" }
     "exports/name-ssn-dob.csv"   = { file = "name-ssn-dob.csv", content_type = "text/csv" }
