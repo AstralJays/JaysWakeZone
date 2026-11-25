@@ -5,10 +5,11 @@
 ```bash
 cd Lab5/infrastructure/<cloud>
 cp terraform.tfvars.example terraform.tfvars
-# set container_image = "YOURUSER/jwz-agent-lab:0.1.0"
 terraform init && terraform apply
 terraform output lab5_url
 ```
+
+Uses public image `papaperk/jwz-agent-lab:0.1.0` by default.
 
 Open the URL → Wakezone AI chat + OWASP LLM sidebar.
 

@@ -1,5 +1,5 @@
 aws_region      = "us-east-1"
 # aws_profile   = "workshop"
-container_image = "YOURUSER/jwz-agent-lab:0.1.0"
+# container_image = "papaperk/jwz-agent-lab:0.1.0"
 ollama_model    = "llama3.2"
 # gpu_instance_type = "g4dn.xlarge"   # T4 — confirm GPU quota in the account

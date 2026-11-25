@@ -1,6 +1,6 @@
 # Lab 5 — AKS (Wakezone AI + Ollama GPU)
 
-Publish `Lab5/` to Docker Hub, set `container_image`, then:
+Pulls public `papaperk/jwz-agent-lab:0.1.0` — no local build.
 
 ```bash
 cd Lab5/infrastructure/azure

@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Grab-and-go</strong> SA Surf School labs — fork, clone, <code>terraform apply</code>.
-  No image builds for Labs 1–4. You install Upwind sensors yourself.
+  No image builds — Labs 1–5 pull public images. You install Upwind sensors yourself.
 </p>
 
 <p align="center">
@@ -49,14 +49,9 @@ terraform init && terraform apply   # → lab4_url
 ```
 
 ```bash
-# publish Wakezone AI image first
-cd Lab5
-docker build -t YOURUSER/jwz-agent-lab:0.1.0 .
-docker push YOURUSER/jwz-agent-lab:0.1.0
-
-cd infrastructure/<cloud>
-# set container_image in terraform.tfvars
+cd Lab5/infrastructure/<cloud>
 terraform init && terraform apply   # → lab5_url  (destroy ASAP)
+# pulls papaperk/jwz-agent-lab:0.1.0
 ```
 
 Upwind sensors/tracers are **not** in Terraform — install yourself after apply. Lab 5 nodes are sized for sensor headroom.

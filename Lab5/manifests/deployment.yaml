@@ -1,5 +1,5 @@
 # Reference — Terraform applies equivalent via kubernetes_* resources.
-# Publish your image, then set container_image in terraform.tfvars.
+# Default public image; override only for forks.
 # WakeBot (CPU) talks to in-cluster Ollama (GPU) at http://ollama:11434/v1
 apiVersion: apps/v1
 kind: Deployment
@@ -22,7 +22,7 @@ spec:
         workload: cpu
       containers:
         - name: app
-          image: YOURUSER/jwz-agent-lab:0.1.0
+          image: papaperk/jwz-agent-lab:0.1.0
           imagePullPolicy: IfNotPresent
           env:
             - name: PORT

@@ -1,5 +1,5 @@
 # Stack 3 of 3 — GKE + WakeBot + in-cluster Ollama on GPU (Lab 5)
-# Publish YOURUSER/jwz-agent-lab then set container_image.
+# Public image — no local build required. Override container_image only for forks.
 # 1× e2-standard-2 (app + Upwind headroom) + 1× n1-standard-4 + T4 (Ollama) — destroy promptly (GPU $).
 # Node RAM sized for Upwind Sensor (≥4 GiB recommended) + Cluster Manager (~2 GiB) — SA installs Upwind.
 
@@ -44,8 +44,8 @@ variable "name_prefix" {
 
 variable "container_image" {
   type        = string
-  description = "Docker Hub image you published from Lab5/"
-  default     = "docker.io/YOURUSER/jwz-agent-lab:0.1.0"
+  description = "Wakezone AI image (public on Docker Hub)"
+  default     = "docker.io/papaperk/jwz-agent-lab:0.1.0"
 }
 
 variable "ollama_model" {

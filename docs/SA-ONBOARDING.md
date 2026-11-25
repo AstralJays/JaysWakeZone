@@ -34,17 +34,13 @@ No image build — pulls `bkimminich/juice-shop` from Docker Hub.
 ## Lab 5 — Kubernetes (Wakezone AI)
 
 ```bash
-# publish once
-cd Lab5 && docker build -t YOURUSER/jwz-agent-lab:0.1.0 . && docker push YOURUSER/jwz-agent-lab:0.1.0
-
 cd Lab5/infrastructure/<cloud>
-# set container_image in terraform.tfvars
 terraform init && apply
 # lab5_url → Wakezone AI → install cluster sensor
 terraform destroy   # do not leave up
 ```
 
-Lab/sandbox only. Image is yours on Docker Hub (no ECR/ACR/GAR).
+No image build — pulls public `papaperk/jwz-agent-lab:0.1.0` (plus `ollama/ollama` for the GPU sidecar).
 
 ## Outputs
 

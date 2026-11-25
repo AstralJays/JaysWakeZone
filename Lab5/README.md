@@ -4,11 +4,13 @@ SurfShop/Maya-style **Wakezone AI** chat for paddle board rentals — OWASP LLM 
 
 | | |
 |-|-|
-| **Image (you publish)** | `YOURUSER/jwz-agent-lab:0.1.0` |
+| **Image (public)** | `papaperk/jwz-agent-lab:0.1.0` |
 | **Port** | `8080` |
 | **K8s** | EKS / AKS / GKE under `infrastructure/` |
 
-## Local
+No local image build required for deploy — Terraform defaults to the Hub image (same idea as Lab 4 / Juice Shop).
+
+## Local (optional)
 
 ```bash
 cd Lab5
@@ -19,26 +21,18 @@ uvicorn app.main:app --reload --port 8080
 
 Optional Ollama: `OLLAMA_BASE_URL=http://127.0.0.1:11434/v1`
 
-Docker (Ollama on host):
-
 ```bash
-docker build -t YOURUSER/jwz-agent-lab:0.1.0 .
 docker run --rm -p 8088:8080 \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434/v1 \
   -e OLLAMA_MODEL=llama3.2 \
-  YOURUSER/jwz-agent-lab:0.1.0
+  papaperk/jwz-agent-lab:0.1.0
 ```
 
 ## Deploy (Kubernetes + GPU Ollama)
 
 ```bash
-cd Lab5
-docker build -t YOURUSER/jwz-agent-lab:0.1.0 .
-docker push YOURUSER/jwz-agent-lab:0.1.0
-
-cd infrastructure/<aws|azure|gcp>
+cd Lab5/infrastructure/<aws|azure|gcp>
 cp terraform.tfvars.example terraform.tfvars
-# container_image = "YOURUSER/jwz-agent-lab:0.1.0"
 terraform init && terraform apply
 terraform output lab5_url
 ```
@@ -53,3 +47,12 @@ Wakezone AI → `http://ollama.default.svc.cluster.local:11434/v1`.
 **Upwind is not in Terraform** — install the cluster sensor yourself (add GPU toleration). **Destroy ASAP.**
 
 See [WALKTHROUGH.md](WALKTHROUGH.md) and `manifests/`.
+
+### Maintainers — refresh the Hub image
+
+```bash
+cd Lab5
+docker build -t papaperk/jwz-agent-lab:0.1.0 -t papaperk/jwz-agent-lab:latest .
+docker push papaperk/jwz-agent-lab:0.1.0
+docker push papaperk/jwz-agent-lab:latest
+```
